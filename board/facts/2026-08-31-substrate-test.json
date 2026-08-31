@@ -1,0 +1,30 @@
+{
+  "gate_answers": {
+    "roots-club-research-scope": {
+      "answer": "Option A — confidence, narrow scope",
+      "by": "Praneet",
+      "on": "2026-08-31",
+      "via": "Cowork session"
+    }
+  },
+  "recommendations": [
+    {
+      "run": "pmf-review",
+      "text": "The evidence justifies a paid test, not a build.",
+      "source": "roots-club-pmf-review.html",
+      "state": "awaiting decision"
+    }
+  ],
+  "contract_checks": [
+    {"run": "design-qa (chat)", "held": true},
+    {"run": "design-qa (project)", "held": true},
+    {"run": "ux-review", "held": true},
+    {"run": "pmf-review", "held": true},
+    {"run": "research-brief", "held": true, "note": "gated before writing; resumed after the answer"}
+  ],
+  "honesty": [
+    "Gate answers and contract verdicts come from the session record (this facts file), not from substrate state. Structured emission from runs is roadmap item 1.",
+    "Findings inside artifact HTML are not yet parsed into objects; the board links the artifacts instead.",
+    "Marker tallies are case-insensitive string counts over artifact files, not schema'd data."
+  ]
+}
