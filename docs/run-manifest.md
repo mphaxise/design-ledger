@@ -56,7 +56,7 @@ to "gated", leave the gate "open", and do not write the deliverable. List what
 you could not verify under "limits".
 ```
 
-Port cost for v0 was one frontmatter block per workflow. v0.1 adds this second block. Whether contract fidelity survives the added instruction is an open empirical question; the next substrate runs answer it.
+Port cost for v0 was one frontmatter block per workflow. v0.1 adds this second block. Contract fidelity survived it on the first live test: the 2026-09-01 pk-ux-review run emitted a schema-valid manifest, ran the validator itself before finishing, and kept every output-contract item intact. The emitted manifest ships as `schema/examples/2026-09-01-ux-review-freshfold-pause.json`, byte-identical to the workspace original except for an added `run.log` join hint.
 
 ## Validation
 
@@ -68,7 +68,7 @@ python3 schema/validate.py schema/examples/*.json
 
 ## Board consumption
 
-Planned, in order: `extract.py` learns to read manifests beside logs and prefers them; the six genesis runs get backfilled manifests; the facts files retire and `board/facts/` becomes history. This section gains dates as each step ships.
+Shipped 2026-09-01: `extract.py` reads every manifest in `--manifests-dir`, schema-checks each one and excludes invalid files loudly, joins manifests to log-measured stats through `run.log`, and no longer takes `--facts`. The six genesis runs travel as backfilled manifests, and `board/facts/` is history the board no longer reads.
 
 ## Open questions
 

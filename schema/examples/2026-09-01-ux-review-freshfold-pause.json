@@ -1,0 +1,382 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-09-01-ux-review-freshfold-pause",
+    "workflow": "ux-review",
+    "skill_id": "pk-ux-review",
+    "substrate": {
+      "name": "opendesign"
+    },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "completed",
+    "date": "2026-09-01",
+    "provenance": "emitted",
+    "log": "designer-layer-emission-test-2026-09-01-run.log",
+    "note": "Review of the FreshFold pause-subscription flow from a written flow description. No build, analytics, ticket text, or store-review text was accessible. The perspective checkpoint rode with the delivered review and blocks implementation rather than delivery, so it is recorded blocking: false and open."
+  },
+  "artifacts": [
+    {
+      "id": "review",
+      "path": "freshfold-pause-flow-ux-review.md",
+      "kind": "report",
+      "title": "FreshFold: pause subscription — UX review"
+    }
+  ],
+  "findings": [
+    {
+      "id": "P0-1",
+      "title": "The confirmation screen makes a claim billing will not honor",
+      "statement": "A user who pauses after the weekly cutoff sees 'Your plan is paused', then receives a box and a charge, with nothing in the flow explaining why both are true.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "steps 5 and 6, confirmation and weekly cutoff",
+      "impact": "Converts a successful task completion into roughly 30 support tickets a week, refund requests, and one-star reviews that read as accusations of bad faith. It also burns the pause feature for that user, who will cancel next time.",
+      "fix": "Replace the state claim with a dated schedule computed before the user confirms: name the already-packed box, the boxes actually skipped, and the resume date. Surface the cutoff consequence on the duration screen, and offer the real alternative when the user is inside the cutoff window.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "trust",
+        "billing",
+        "copy",
+        "client-side-fix"
+      ]
+    },
+    {
+      "id": "P0-2",
+      "title": "A required survey blocks the primary action",
+      "statement": "Nine required radio options with no skip stand between the user and a decision they already made, and 62% of pause attempts abandon there.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "step 3, 'Why are you pausing?' survey",
+      "impact": "The 62% measures drop-off, not retention. Abandoning users still intend to pause and pursue that intent through second attempts, support tickets, card blocks, chargebacks, and 'can't cancel' reviews. Nine options also push the submit control below the fold on most handsets.",
+      "fix": "Move the survey after the pause commits and make it optional. Show five reasons plus 'Something else', remapped client-side to the existing enum values, and route skips and the catch-all to the current fallback value so the payload shape is unchanged.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "blocking-friction",
+        "dark-pattern",
+        "client-side-fix"
+      ]
+    },
+    {
+      "id": "P0-3",
+      "title": "The home screen contradicts the confirmation for 24 hours",
+      "statement": "After a successful pause the home-screen next-delivery banner still shows the upcoming box for up to 24 hours, and the user cannot tell a stale cache apart from a failed pause.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "step 5, post-confirmation home screen",
+      "impact": "Drives duplicate pause attempts and duplicate support contacts, and turns the cutoff billing edge case into a credibility pattern: a charge arriving later reads as confirmation the app was already lying.",
+      "fix": "Invalidate the banner locally on a successful pause and render it from the pause record the client just wrote, showing the paused state and resume date. If a stale window is unavoidable, label it as updating rather than showing a cancelled delivery.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "state-consistency",
+        "trust",
+        "client-side-fix"
+      ]
+    },
+    {
+      "id": "P1-1",
+      "title": "The entry point is designed to be hard to find",
+      "statement": "A 4-second unskippable animation and three full-weight retention offers precede the requested action, which renders as a 12px gray text link at the bottom of the screen.",
+      "severity": "P1",
+      "basis": "derived",
+      "location": "step 2, 'Before you go' interstitial",
+      "impact": "Reads as obstruction, which users recognize and report publicly. Two hard failures sit inside it independent of the persuasion argument: a 12px link misses the 44pt iOS and 48dp Android minimum target size, and a forced 4-second animation with no skip fails WCAG 2.2.2 and ignores Reduce Motion.",
+      "fix": "Keep the offers, change the presentation. Render Pause as a full-width secondary button with a real target below the offers. Cut the animation under one second, make it skippable on tap, and disable it under prefers-reduced-motion.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "accessibility",
+        "dark-pattern",
+        "view-layer-fix"
+      ]
+    },
+    {
+      "id": "P1-2",
+      "title": "Cancel is not where users look for it, so they conclude it does not exist",
+      "statement": "Cancel lives under a different menu from 'Manage plan', so users seeking it hit the retention wall, abandon, and write app-store reviews saying they cannot cancel.",
+      "severity": "P1",
+      "basis": "reported",
+      "location": "settings information architecture",
+      "impact": "Converts cancel intent into public complaints and support volume, and contaminates pause metrics with an unknown share of step-3 abandoners who were never pause candidates.",
+      "fix": "Add 'Cancel subscription' to the Manage plan screen as a plain text option beside Pause. One navigation change.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "information-architecture",
+        "app-store-perception",
+        "navigation-only-fix"
+      ]
+    },
+    {
+      "id": "P1-3",
+      "title": "Pause duration is expressed in units the user does not think in",
+      "statement": "The 1/2/4-week picker with no custom date forces users to round real absences into the app's units, defaults to the option that resumes billing soonest, and never states which deliveries are skipped or when billing resumes.",
+      "severity": "P1",
+      "basis": "derived",
+      "location": "step 4, duration picker",
+      "impact": "A three-week trip has no correct answer. The user chooses a number with no visible consequence, which is the same information gap that produces the post-cutoff surprise in P0-1.",
+      "fix": "Keep the four options and attach real dates to each. Default to 2 weeks so the shortest option is not automatic. Add a 'Longer, or specific dates' row routing to support or account settings. A true custom resume date likely requires storing a date instead of a duration, which is out of scope this sprint under A2.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "mental-model",
+        "partial-fix-in-scope"
+      ]
+    },
+    {
+      "id": "P2-1",
+      "title": "The flow does not describe how a pause is managed after it starts",
+      "statement": "Resuming early, extending a pause, and checking how many boxes remain skipped do not appear anywhere in the flow as described.",
+      "severity": "P2",
+      "basis": "unverified",
+      "location": "post-confirmation",
+      "impact": "If no such surface exists, support is the user's only lever after committing, adding ticket volume to a flow already generating it.",
+      "fix": "Confirm whether a pause-state surface exists. If not, replace the home delivery card with a paused card showing the resume date and a 'Resume now' action, reusing the local state needed for P0-3.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "needs-verification"
+      ]
+    },
+    {
+      "id": "P2-2",
+      "title": "No visible back path between steps",
+      "statement": "The flow as described moves forward only, with no stated way back for a user who picks the wrong duration or wants to reconsider an offer.",
+      "severity": "P2",
+      "basis": "unverified",
+      "location": "steps 2 through 5",
+      "impact": "A misselection becomes a restart through the retention wall, or a support contact.",
+      "fix": "Verify and add standard back navigation on each step if it is missing.",
+      "artifact": "review",
+      "status": "open",
+      "tags": [
+        "needs-verification"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "A1",
+      "statement": "Next-delivery date and the weekly cutoff rule are derivable client-side, since the home banner already renders a delivery date.",
+      "basis": "Inferred from step 5, where the home-screen banner shows the upcoming box, so delivery scheduling data already reaches the client.",
+      "impact_if_wrong": "P0-1's fix needs a new API field, which may exceed the no-schema-change constraint. This gates the highest-value fix and should be verified first.",
+      "status": "open",
+      "artifact": "review",
+      "tags": [
+        "blocking-verification"
+      ]
+    },
+    {
+      "id": "A2",
+      "statement": "Pause is persisted as a duration or enum, so arbitrary resume dates would require a schema change.",
+      "basis": "Inferred from the fixed 1/2/4-week option set and the absence of any custom-date affordance.",
+      "impact_if_wrong": "Custom dates become sprint-eligible and P1-3 gets a better fix than date labels on fixed options.",
+      "status": "open",
+      "artifact": "review"
+    },
+    {
+      "id": "A3",
+      "statement": "The nine churn-reason values are a server-side enum the client can subset and remap without changing the request payload.",
+      "basis": "Standard shape for a radio-backed reason field; not verified against the API.",
+      "impact_if_wrong": "The survey fix needs a nullable field or a new enum value, which is a schema change. Fallback within constraint: keep all nine options, rename the ninth to 'Prefer not to say', and remove the required flag.",
+      "status": "open",
+      "artifact": "review"
+    },
+    {
+      "id": "A4",
+      "statement": "The 62% who abandon at step 3 still intend to pause and pursue that intent through other channels.",
+      "basis": "Consistent with the existing 'can't cancel' app-store reviews and the 'paused but charged' ticket volume, but not established by any data supplied.",
+      "impact_if_wrong": "The survey wall is genuinely retaining users and P0-2 is overweighted in the priority order.",
+      "status": "open",
+      "artifact": "review",
+      "tags": [
+        "testable"
+      ]
+    },
+    {
+      "id": "A5",
+      "statement": "The 12px gray pause link fails contrast and minimum target-size requirements.",
+      "basis": "Inferred from the described styling. Actual token values were not measured.",
+      "impact_if_wrong": "The accessibility half of P1-1 weakens; the obstruction and hierarchy argument stands regardless.",
+      "status": "open",
+      "artifact": "review"
+    }
+  ],
+  "gates": [
+    {
+      "id": "ux-review-checkpoint",
+      "title": "Perspective checkpoint",
+      "kind": "checkpoint",
+      "description": "Three calls before this review becomes an implementation plan: the non-negotiable feeling, the speed-versus-craft tradeoff inside the one-sprint budget, and approval of the priority order.",
+      "blocking": false,
+      "state": "open",
+      "questions": [
+        {
+          "id": "non_negotiable_feeling",
+          "label": "Which user feeling is non-negotiable in this flow?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "told_the_truth",
+          "description": "My recommendation is 'told the truth about my money and my dates'. It is the feeling P0-1 and P0-3 destroy outright, and the one your 30 weekly tickets and 'can't cancel' reviews are both symptoms of.",
+          "options": [
+            {
+              "value": "told_the_truth",
+              "label": "Told the truth about my money and my dates (Recommended)"
+            },
+            {
+              "value": "in_control",
+              "label": "In control of my own schedule"
+            },
+            {
+              "value": "unimpeded",
+              "label": "Unimpeded — the app does not fight me on my own account"
+            },
+            {
+              "value": "valued",
+              "label": "Valued enough that leaving is treated respectfully"
+            }
+          ]
+        },
+        {
+          "id": "tradeoff",
+          "label": "Speed-first or craft-first inside the one-sprint, two-engineer budget?",
+          "type": "radio",
+          "required": true,
+          "default": "craft_first",
+          "description": "A: the three P0s only. Fastest path to killing the 'paused but charged' tickets, leaves the entry-point obstruction and the 'can't cancel' reviews untouched. B: the split in the review — P0s plus P1-1, P1-2, P1-3. Every item is client-side or copy, so it fits, but it fills the sprint with no slack for A1 turning out false.",
+          "options": [
+            {
+              "value": "speed_first",
+              "label": "Option A — speed-first, three P0s, minimum quality bar"
+            },
+            {
+              "value": "craft_first",
+              "label": "Option B — craft-first, P0s plus P1s as scoped (Recommended)"
+            }
+          ]
+        },
+        {
+          "id": "approve_priority",
+          "label": "Approve this priority order for implementation?",
+          "type": "radio",
+          "required": true,
+          "default": "approve",
+          "description": "P0-1 is the load-bearing one. If only one thing ships this sprint, it should be the dated confirmation. Verify A1 before committing the sprint, since it gates that fix.",
+          "options": [
+            {
+              "value": "approve",
+              "label": "Approved as ordered"
+            },
+            {
+              "value": "reorder",
+              "label": "Approve with changes — I'll note them below"
+            },
+            {
+              "value": "hold",
+              "label": "Hold until A1 and the post-cutoff pause behaviour are verified"
+            }
+          ]
+        },
+        {
+          "id": "notes",
+          "label": "Reordering, constraints, or data you already have",
+          "type": "textarea",
+          "required": false
+        }
+      ]
+    }
+  ],
+  "decisions": [],
+  "recommendations": [
+    {
+      "id": "rec-truth-chain",
+      "text": "Engineer A takes the truth chain (P0-1, P0-3, P1-3): compute skipped dates and resume date client-side, rewrite the duration screen to show per-option consequences, rewrite the confirmation as a dated schedule with a cutoff notice, and invalidate and re-render the home banner from local pause state.",
+      "state": "awaiting-decision",
+      "artifact": "review"
+    },
+    {
+      "id": "rec-entry-exit",
+      "text": "Engineer B takes the entry and the exit (P0-2, P1-1, P1-2): move the survey to post-confirmation and make it optional with five options plus a catch-all, promote Pause to a real secondary button, cut and gate the animation, and add Cancel to Manage plan.",
+      "state": "awaiting-decision",
+      "artifact": "review"
+    },
+    {
+      "id": "rec-verify-a1-first",
+      "text": "Verify A1 before committing the sprint: if the cutoff rule and next-delivery date are not derivable client-side, P0-1's fix needs an API field and the no-schema-change constraint forces a rescope.",
+      "state": "awaiting-decision",
+      "artifact": "review"
+    },
+    {
+      "id": "rec-defer",
+      "text": "Defer P2-1 and P2-2 pending verification, and custom pause dates pending a schema decision in a later cycle.",
+      "state": "awaiting-decision",
+      "artifact": "review"
+    },
+    {
+      "id": "rec-handoff-design-qa",
+      "text": "Hand formal verification to /design-qa: contrast and target-size measurement against real tokens, WCAG 2.2.2 and reduced-motion behaviour, and regression checks on the confirmation and banner state after the fixes land.",
+      "state": "awaiting-decision",
+      "artifact": "review"
+    }
+  ],
+  "contract": {
+    "declared_by": "run",
+    "items": [
+      {
+        "item": "Prioritized UX issues",
+        "held": true,
+        "note": "Eight findings, three P0, three P1, two P2, each with an evidence basis."
+      },
+      {
+        "item": "Recommended fixes with rationale",
+        "held": true,
+        "note": "Every P0 and P1 fix is client-side or copy and respects the no-backend-schema-change constraint; the one fix that cannot be (custom pause dates) is named and deferred."
+      },
+      {
+        "item": "Open risks and questions",
+        "held": true,
+        "note": "Five open questions plus five labelled assumptions."
+      },
+      {
+        "item": "No PMF/FMF claim",
+        "held": true,
+        "note": "Scope boundary stated in the deliverable; no retention or churn outcome is predicted."
+      },
+      {
+        "item": "No fabricated usability study outcomes",
+        "held": true,
+        "note": "Only the two figures supplied (62% abandonment, ~30 tickets/week) are cited as data; everything else is labelled derived or unverified."
+      },
+      {
+        "item": "Uncertain claims labelled as assumptions",
+        "held": true,
+        "note": "A1 through A5, plus per-finding basis values."
+      },
+      {
+        "item": "Personal Perspective Checkpoint asked",
+        "held": true,
+        "note": "Taste, tradeoff, and approval gates asked in-session as a single question form; recorded here as one open non-blocking checkpoint gate."
+      },
+      {
+        "item": "Verification handed to /design-qa",
+        "held": true,
+        "note": "Named in the deliverable's scope boundary and in rec-handoff-design-qa."
+      }
+    ]
+  },
+  "limits": [
+    "No access to the running iOS or Android build; every finding derives from the written flow description.",
+    "No access to analytics beyond the two figures supplied (62% step-3 abandonment, roughly 30 'paused but charged' tickets per week). Downstream behaviour of the 62% is unknown, which is why A4 is open rather than asserted.",
+    "No access to raw support ticket text or app-store review text; both are cited as the user characterized them.",
+    "Contrast and target-size failures in P1-1 are inferred from the described 12px gray styling and were not measured against the product's actual tokens (A5).",
+    "Whether the pause itself applies correctly for post-cutoff users was not verifiable. P0-1 assumes the pause works and only the messaging is wrong; if the pause silently fails, that is a defect and the priority order changes.",
+    "The regulatory exposure noted in the deliverable's open risks is flagged as a risk shape for legal review, not a legal opinion.",
+    "P2-1 and P2-2 are marked unverified because pause management and back navigation may exist outside the flow as described.",
+    "The perspective checkpoint is open and unanswered; the priority order and sprint split are proposals, not approved plans."
+  ]
+}
