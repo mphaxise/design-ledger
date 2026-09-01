@@ -1,0 +1,41 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-08-31-pmf-review",
+    "workflow": "pmf-review",
+    "skill_id": "pk-pmf-review",
+    "substrate": { "name": "opendesign", "version": "0.21.1" },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "completed",
+    "date": "2026-08-31",
+    "provenance": "backfilled",
+    "note": "Backfilled from the 2026-08-31 session record."
+  },
+  "artifacts": [
+    {
+      "id": "review",
+      "path": "roots-club-pmf-review.html",
+      "kind": "report",
+      "title": "Roots Club PMF review"
+    }
+  ],
+  "findings": [],
+  "assumptions": [],
+  "gates": [],
+  "decisions": [],
+  "recommendations": [
+    {
+      "id": "paid-test-not-build",
+      "text": "The evidence justifies a paid test, not a build.",
+      "state": "awaiting-decision",
+      "artifact": "review",
+      "tags": ["verdict"]
+    }
+  ],
+  "limits": [
+    "The review labels its evidence strong / partial / assumption inside the artifact (8 / 2 / 5 markers); those rows were not backfilled as objects. Whether they become findings, assumptions, or a distinct evidence object is an open v0.2 question recorded in docs/run-manifest.md.",
+    "The run's conflict gate (which proposed a paid pre-order test as the falsification) and its continue / narrow / reposition ask were not backfilled as gate objects."
+  ]
+}

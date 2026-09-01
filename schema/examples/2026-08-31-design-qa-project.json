@@ -1,0 +1,63 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-08-31-design-qa-project",
+    "workflow": "design-qa",
+    "skill_id": "pk-design-qa",
+    "substrate": { "name": "opendesign", "version": "0.21.1" },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "completed",
+    "date": "2026-08-31",
+    "provenance": "backfilled",
+    "note": "Backfilled from the 2026-08-31 session record. Finding content is verbatim from the run's deliverable."
+  },
+  "artifacts": [
+    {
+      "id": "report",
+      "path": "guest-checkout-design-qa.html",
+      "kind": "report",
+      "title": "Guest checkout design QA"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-dup-charge",
+      "title": "DUP-CHARGE",
+      "statement": "The payment step accepts a second submit while the first is still in flight, and charges the card twice.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "step 3, payment",
+      "reproduction": [
+        "Throttle the connection to Slow 3G in devtools, or test on a real congested mobile network.",
+        "Add any plant to the cart and proceed as a guest through shipping.",
+        "On the payment step, enter card details in the iframe and press Pay.",
+        "Observe: the control gives no pending, disabled, or spinner state while the request is outstanding.",
+        "Press Pay again after roughly two seconds of silence — the interval at which users conclude a tap did not register.",
+        "Check the payment provider dashboard for two authorizations against the same cart."
+      ],
+      "impact": "A guest is charged twice for one order and has no account, no order history, and no self-serve refund path. The only route back is a support ticket or a card chargeback, both of which cost the user days and cost you the dispute fee and the trust. This is the single failure in the flow that takes real money and cannot be undone by the user. It also directly fails a stated acceptance criterion.",
+      "artifact": "report",
+      "status": "open"
+    }
+  ],
+  "assumptions": [],
+  "gates": [],
+  "decisions": [],
+  "recommendations": [],
+  "contract": {
+    "declared_by": "session-record",
+    "items": [
+      { "item": "Severity-ranked P0–P3 findings with stable ids", "held": true },
+      { "item": "Reproduction path per finding", "held": true },
+      { "item": "User impact statement per finding", "held": true },
+      { "item": "Per-finding evidence basis column (reported / derived / unverified)", "held": true }
+    ]
+  },
+  "limits": [
+    "The run produced 11 findings; one is backfilled here as an object, the rest remain in the artifact only.",
+    "The run's three checkpoint gates and its stop-ship call are rendered in the artifact and were not backfilled as gate objects.",
+    "Contract items are session-record checks, not the run's own declaration; an emitted manifest would carry declared_by: run."
+  ]
+}

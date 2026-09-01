@@ -1,0 +1,70 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-08-31-research-brief-2",
+    "workflow": "research-brief",
+    "skill_id": "pk-research-brief",
+    "substrate": { "name": "opendesign", "version": "0.21.1" },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "completed",
+    "date": "2026-08-31",
+    "resumes": "2026-08-31-research-brief-1",
+    "provenance": "backfilled",
+    "note": "Backfilled from the 2026-08-31 session record. This run resumed the gated run with the human's answer and wrote the deliverable; together the two manifests record one round-trip through a judgment gate."
+  },
+  "artifacts": [
+    {
+      "id": "brief",
+      "path": "roots-club-pricing-research-brief.html",
+      "kind": "report",
+      "title": "Roots Club pricing research brief"
+    }
+  ],
+  "findings": [],
+  "assumptions": [
+    {
+      "id": "paid-conversion-below-free",
+      "statement": "Paid conversion off one send is lower than the 5.1% free-signup rate observed off a comparable send, because the ask now carries a price.",
+      "basis": "Stated assumption used to size the study, not a benchmark; no external conversion figures have been sourced.",
+      "status": "open",
+      "artifact": "brief"
+    },
+    {
+      "id": "constant-churn-hazard",
+      "statement": "The lifetime-value steps assume a constant monthly cancellation hazard.",
+      "impact_if_wrong": "Real subscription churn is usually front-loaded, which would make true lifetime shorter than the model implies. The 41% floor is therefore optimistic, and a result sitting just above it should be read as weaker than it looks.",
+      "status": "open",
+      "artifact": "brief"
+    }
+  ],
+  "gates": [
+    {
+      "id": "roots-club-research-scope",
+      "title": "Lock the research bet before I write the plan",
+      "kind": "uncertainty",
+      "blocking": true,
+      "state": "answered",
+      "decision": "scope-locked"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "scope-locked",
+      "gate": "roots-club-research-scope",
+      "answer": "Option A — confidence, narrow scope",
+      "answers": { "scope_bet": "confidence_narrow" },
+      "by": "Praneet",
+      "at": "2026-08-31",
+      "via": "Cowork session",
+      "channel": "resume-prompt"
+    }
+  ],
+  "recommendations": [],
+  "limits": [
+    "The brief carries 14 assumption labels; two are backfilled here as objects, the rest remain in the artifact only.",
+    "The session record captured the scope_bet answer; answers to behavioral_test and existing_data are not in the record, so this decision lists only what is evidenced.",
+    "The answered gate is recorded here without re-stating its full question set; the gated manifest 2026-08-31-research-brief-1 carries the verbatim form."
+  ]
+}

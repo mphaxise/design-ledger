@@ -1,0 +1,212 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mphaxise/design-ledger/main/schema/run-manifest.schema.json",
+  "title": "design-ledger run manifest",
+  "description": "The structured account a run writes of the objects it produced: findings, assumptions, gates, decisions, recommendations, artifacts. The manifest is the run's own testimony. Substrate-measured facts (cost, tokens, exit status) and human gate answers keep their own authority; the board joins them to this file rather than trusting the run to assert them. Design rationale and emission contract: docs/run-manifest.md.",
+  "type": "object",
+  "required": ["manifest", "schema_version", "run"],
+  "properties": {
+    "manifest": { "const": "design-ledger/run-manifest" },
+    "schema_version": { "const": "0.1" },
+    "run": { "$ref": "#/$defs/run" },
+    "artifacts": { "type": "array", "items": { "$ref": "#/$defs/artifact" } },
+    "findings": { "type": "array", "items": { "$ref": "#/$defs/finding" } },
+    "assumptions": { "type": "array", "items": { "$ref": "#/$defs/assumption" } },
+    "gates": { "type": "array", "items": { "$ref": "#/$defs/gate" } },
+    "decisions": { "type": "array", "items": { "$ref": "#/$defs/decision" } },
+    "recommendations": { "type": "array", "items": { "$ref": "#/$defs/recommendation" } },
+    "contract": { "$ref": "#/$defs/contract" },
+    "limits": {
+      "description": "What this run could not see, verify, or emit. Successor of the facts files' honesty notes. An empty or missing list claims nothing.",
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  },
+  "$defs": {
+    "id": {
+      "description": "Slug identifier, unique within its collection, stable across re-renders of the same run. Observed in the wild as slugs like finding-dup-charge and roots-club-research-scope.",
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$"
+    },
+    "date": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}$" },
+    "run": {
+      "type": "object",
+      "required": ["id", "workflow", "status", "date", "provenance"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "workflow": { "description": "Practice workflow name, e.g. design-qa, ux-review, pmf-review, research-brief.", "type": "string" },
+        "skill_id": { "description": "Skill id as the substrate lists it, e.g. pk-design-qa.", "type": "string" },
+        "substrate": {
+          "type": "object",
+          "required": ["name"],
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" }
+          }
+        },
+        "engine": { "description": "Agent runtime that executed the run, e.g. claude-code.", "type": "string" },
+        "mode": { "enum": ["chat", "project"] },
+        "status": {
+          "description": "completed: deliverable written, no blocking gate open. gated: stopped at a blocking gate, deliverable withheld. failed: run ended without meeting its contract.",
+          "enum": ["completed", "gated", "failed"]
+        },
+        "date": { "$ref": "#/$defs/date" },
+        "started_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" },
+        "ended_at": { "type": "string", "pattern": "^\\d{4}-\\d{2}-\\d{2}T" },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "session_id": { "description": "Substrate session identifier, the board's join key to daemon and log data.", "type": "string" },
+        "resumes": {
+          "description": "Run id this run resumed. A gated run and its resumption are two manifests linked by this field.",
+          "$ref": "#/$defs/id"
+        },
+        "provenance": {
+          "description": "emitted: written by the run itself. backfilled: reconstructed later from session records; the board must label it as such.",
+          "enum": ["emitted", "backfilled"]
+        },
+        "note": { "type": "string" }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "required": ["id", "path"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "path": {
+          "description": "Path relative to the run workspace. Absolute paths, home paths, and parent traversal are rejected: manifests travel, machine paths must not.",
+          "type": "string",
+          "pattern": "^[^/~]"
+        },
+        "kind": { "description": "Free string, e.g. report, image, data.", "type": "string" },
+        "title": { "type": "string" }
+      }
+    },
+    "finding": {
+      "type": "object",
+      "required": ["id", "statement", "severity", "basis"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "statement": { "description": "The claim, one sentence, as it appears in the deliverable.", "type": "string" },
+        "severity": { "enum": ["P0", "P1", "P2", "P3"] },
+        "basis": {
+          "description": "Evidence basis as the design-qa runs of 2026-08-31 emitted it: reported (observed or stated by a source), derived (inferred from evidence), unverified.",
+          "enum": ["reported", "derived", "unverified"]
+        },
+        "location": { "description": "Where in the flow or surface, e.g. 'step 3, payment'.", "type": "string" },
+        "reproduction": { "type": "array", "items": { "type": "string" } },
+        "impact": { "type": "string" },
+        "fix": { "type": "string" },
+        "artifact": { "$ref": "#/$defs/id" },
+        "status": { "enum": ["open", "acknowledged", "resolved", "wont-fix"] },
+        "tags": { "$ref": "#/$defs/tags" }
+      }
+    },
+    "assumption": {
+      "type": "object",
+      "required": ["id", "statement"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "statement": { "type": "string" },
+        "basis": { "description": "Why it is assumed and what, if anything, it leans on.", "type": "string" },
+        "impact_if_wrong": { "type": "string" },
+        "status": { "enum": ["open", "tested", "confirmed", "refuted"] },
+        "artifact": { "$ref": "#/$defs/id" },
+        "tags": { "$ref": "#/$defs/tags" }
+      }
+    },
+    "gate": {
+      "type": "object",
+      "required": ["id", "title", "state"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "title": { "type": "string" },
+        "kind": { "description": "Free string, e.g. uncertainty, taste, tradeoff, stop-ship, scope, conflict.", "type": "string" },
+        "description": { "type": "string" },
+        "questions": { "type": "array", "items": { "$ref": "#/$defs/question" } },
+        "blocking": { "description": "A blocking gate withholds the deliverable until answered. Defaults to true; every mandatory contract gate is blocking.", "type": "boolean" },
+        "state": { "enum": ["open", "answered"] },
+        "decision": { "description": "Id of the decision that answered this gate. Required when state is answered.", "$ref": "#/$defs/id" }
+      }
+    },
+    "question": {
+      "type": "object",
+      "required": ["id", "label"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "label": { "type": "string" },
+        "type": { "description": "Input type as the substrate rendered it, e.g. radio.", "type": "string" },
+        "description": { "type": "string" },
+        "required": { "type": "boolean" },
+        "allow_custom": { "type": "boolean" },
+        "default": { "description": "Default value: a string for single-choice questions, an array of strings for multi-select. Observed both shapes on 2026-08-31." },
+        "options": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["value", "label"],
+            "properties": {
+              "value": { "type": "string" },
+              "label": { "type": "string" },
+              "description": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "decision": {
+      "type": "object",
+      "required": ["id", "gate", "answer", "by", "at"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "gate": { "$ref": "#/$defs/id" },
+        "answer": { "description": "Human-readable answer as given, e.g. 'Option A — confidence, narrow scope'.", "type": "string" },
+        "answers": {
+          "description": "Per-question values when captured, keyed by question id.",
+          "type": "object"
+        },
+        "by": { "type": "string" },
+        "at": { "$ref": "#/$defs/date" },
+        "via": { "description": "Surface the answer came from, e.g. 'Cowork session'.", "type": "string" },
+        "channel": { "enum": ["resume-prompt", "form", "board", "other"] }
+      }
+    },
+    "recommendation": {
+      "type": "object",
+      "required": ["id", "text"],
+      "properties": {
+        "id": { "$ref": "#/$defs/id" },
+        "text": { "type": "string" },
+        "state": { "enum": ["awaiting-decision", "accepted", "declined", "superseded"] },
+        "artifact": { "$ref": "#/$defs/id" },
+        "tags": { "$ref": "#/$defs/tags" }
+      }
+    },
+    "contract": {
+      "type": "object",
+      "required": ["declared_by", "items"],
+      "properties": {
+        "declared_by": {
+          "description": "run: the run's own unverified self-check. session-record: checked by a human or session tooling after the fact.",
+          "enum": ["run", "session-record"]
+        },
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["item", "held"],
+            "properties": {
+              "item": { "type": "string" },
+              "held": { "type": "boolean" },
+              "note": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "tags": {
+      "description": "The run's own vocabulary, carried verbatim without normalization, e.g. the pmf-review evidence labels strong/partial or the research-brief tags measured/calculated.",
+      "type": "array",
+      "items": { "type": "string" }
+    }
+  }
+}

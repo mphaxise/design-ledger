@@ -1,0 +1,99 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-08-31-research-brief-1",
+    "workflow": "research-brief",
+    "skill_id": "pk-research-brief",
+    "substrate": { "name": "opendesign", "version": "0.21.1" },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "gated",
+    "date": "2026-08-31",
+    "provenance": "backfilled",
+    "note": "Backfilled from the 2026-08-31 session record; the run predates this schema. Gate content is verbatim from the run's question-form as parsed out of the saved SSE log."
+  },
+  "artifacts": [],
+  "findings": [],
+  "assumptions": [],
+  "gates": [
+    {
+      "id": "roots-club-research-scope",
+      "title": "Lock the research bet before I write the plan",
+      "kind": "uncertainty",
+      "description": "Three weeks with a part-time researcher buys one good study, not three. These answers decide what the method plan actually contains.",
+      "questions": [
+        {
+          "id": "scope_bet",
+          "label": "Which bet should this study optimize for?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "confidence_narrow",
+          "description": "Recommended: A. You are deciding whether to spend a quarter of engineering. That is expensive and slow to reverse, so a defensible answer on one narrow question beats a wide, thin map of the space.",
+          "options": [
+            {
+              "value": "confidence_narrow",
+              "label": "Option A — Confidence, narrow scope (Recommended)",
+              "description": "One question: will enough of these customers pay a recurring price for this? Priced concept test to both segments, a live behavioral signal, and pricing sensitivity. Produces a defensible go/no-go number. Tells you little about what the product should be."
+            },
+            {
+              "value": "learning_broad",
+              "label": "Option B — Learning speed, broad exploration",
+              "description": "Interviews across repeat and lapsed buyers on plant-buying rhythm, why lapsed buyers stopped, and what a subscription would have to do. Produces a strong product definition and a weak commercial number — the go/no-go stays a judgment call."
+            }
+          ]
+        },
+        {
+          "id": "behavioral_test",
+          "label": "How far can we go on a live willingness-to-pay test with real customers?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "waitlist_priced",
+          "description": "Stated interest in subscriptions overstates real signup by a wide margin. Whatever you allow here sets the ceiling on how strong the evidence can be.",
+          "options": [
+            {
+              "value": "pre_sell_paid",
+              "label": "Real pre-sell — take a deposit or first payment, refundable",
+              "description": "Strongest evidence. Also the highest brand risk if you then decide no-go, and it needs a refund and comms plan."
+            },
+            {
+              "value": "waitlist_priced",
+              "label": "Priced waitlist — show real price and tiers, capture intent, no charge (Recommended)",
+              "description": "Far stronger than a survey, buildable in days, low brand risk. Reserve-your-spot framing with an honest 'launching if there's demand' note."
+            },
+            {
+              "value": "stated_only",
+              "label": "Survey and interviews only — no live test",
+              "description": "Fastest and safest, but the go/no-go rests on stated intent, which I will have to discount heavily in the brief."
+            }
+          ]
+        },
+        {
+          "id": "existing_data",
+          "label": "What existing data can the researcher pull without engineering help?",
+          "type": "checkbox",
+          "allow_custom": true,
+          "default": ["order_history", "email_engagement"],
+          "description": "Anything checked here becomes a zero-cost quant workstream — repeat rate, inter-order gap, category mix — instead of a question I have to spend incentive budget asking.",
+          "options": [
+            { "value": "order_history", "label": "Order history per customer (dates, value, items)" },
+            { "value": "email_engagement", "label": "Email list engagement (opens, clicks, unsubscribes)" },
+            { "value": "support_tickets", "label": "Support tickets, reviews, or past customer messages" },
+            { "value": "site_analytics", "label": "Site analytics (traffic, product page views, cart behavior)" },
+            { "value": "none", "label": "None of it is accessible in three weeks" }
+          ]
+        }
+      ],
+      "blocking": true,
+      "state": "open"
+    }
+  ],
+  "decisions": [],
+  "recommendations": [],
+  "limits": [
+    "The run stopped at its mandatory uncertainty gate before writing any deliverable; there is no artifact for this manifest to reference. Contract-correct behavior.",
+    "Substrate-measured stats for this run (58s, 3,982 output tokens, $0.43) live in the session record and SSE log, not in this manifest; the manifest never asserts what the substrate measures."
+  ]
+}
