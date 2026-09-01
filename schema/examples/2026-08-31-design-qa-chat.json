@@ -1,0 +1,114 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-08-31-design-qa-chat",
+    "workflow": "design-qa",
+    "skill_id": "pk-design-qa",
+    "substrate": { "name": "opendesign", "version": "0.21.1" },
+    "engine": "claude-code",
+    "mode": "chat",
+    "status": "completed",
+    "date": "2026-08-31",
+    "provenance": "backfilled",
+    "log": "designer-layer-substrate-test-2026-08-31-run.log",
+    "note": "Backfilled from the 2026-08-31 session record. The deliverable was chat text; the run wrote no artifact file. The rendered form's options were plain strings and are backfilled as value/label pairs; render-only form attributes are omitted."
+  },
+  "artifacts": [],
+  "findings": [
+    {
+      "id": "P0-1",
+      "title": "Duplicate charges on slow networks (payment step)",
+      "statement": "Duplicate charges on slow networks: a second tap on Pay before any visual response produces a second charge for the same order.",
+      "severity": "P0",
+      "reproduction": [
+        "Throttle to Slow 3G (or ~400ms+ RTT), enter card in the iframe, tap Pay, tap again within ~3s before any visual response.",
+        "Also reproduces via browser Back and resubmit, and via mobile double-tap that fires before JS handlers attach."
+      ],
+      "impact": "The customer is charged twice for one order and has no way to tell — there's no confirmation artifact to compare against. They discover it on a bank statement days later.",
+      "fix": "Disabling the button and adding a spinner is the UI half. Zero duplicate charges requires a server-side idempotency key minted when the checkout session is created and passed on every charge attempt.",
+      "status": "open",
+      "tags": ["violates: zero duplicate charges (hard acceptance criterion)"]
+    }
+  ],
+  "assumptions": [],
+  "gates": [
+    {
+      "id": "design-qa-gates",
+      "title": "Severity and risk gates",
+      "kind": "checkpoint",
+      "questions": [
+        {
+          "id": "email_field",
+          "label": "Does the current 9-field shipping form collect an email address?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "options": [
+            { "value": "Yes — email is already captured", "label": "Yes — email is already captured" },
+            { "value": "No — there is no email field", "label": "No — there is no email field" },
+            { "value": "Not sure, need to check", "label": "Not sure, need to check" }
+          ]
+        },
+        {
+          "id": "cta_hex",
+          "label": "Checkout CTA text color and background (hex), so I can compute the actual contrast ratio",
+          "type": "text"
+        },
+        {
+          "id": "threshold",
+          "label": "What severity threshold triggers fix-before-ship?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "options": [
+            { "value": "P0 only", "label": "P0 only" },
+            { "value": "P0 + P1", "label": "P0 + P1" },
+            { "value": "Any WCAG AA failure regardless of severity band", "label": "Any WCAG AA failure regardless of severity band" },
+            { "value": "Anything touching the three acceptance criteria", "label": "Anything touching the three acceptance criteria" }
+          ]
+        },
+        {
+          "id": "residual_risk",
+          "label": "Is the current residual UX risk acceptable for this release?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "options": [
+            { "value": "No — not acceptable, hold the release", "label": "No — not acceptable, hold the release" },
+            { "value": "Acceptable only after P0s land", "label": "Acceptable only after P0s land" },
+            { "value": "Acceptable with all P0s and P1s landed", "label": "Acceptable with all P0s and P1s landed" },
+            { "value": "Acceptable as-is, ship and fix forward", "label": "Acceptable as-is, ship and fix forward" }
+          ]
+        },
+        {
+          "id": "call",
+          "label": "Which call do you want to make?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "options": [
+            { "value": "Stop-ship until P0-1 and P0-2 are fixed", "label": "Stop-ship until P0-1 and P0-2 are fixed" },
+            { "value": "Ship with known risk, documented and communicated to support", "label": "Ship with known risk, documented and communicated to support" },
+            { "value": "Not deciding yet — gather the missing evidence first", "label": "Not deciding yet — gather the missing evidence first" }
+          ]
+        },
+        {
+          "id": "notes",
+          "label": "Anything I got wrong about the flow, or constraints I should know",
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "blocking": false,
+      "state": "open"
+    }
+  ],
+  "decisions": [],
+  "recommendations": [],
+  "limits": [
+    "The run produced 8 findings (3 P0, 2 P1, 2 P2, 1 P3) as chat text; one is backfilled as an object.",
+    "The run stated its provenance as a blanket: every claim comes from the flow description given, and measurements it could not take are labeled as assumptions. Per-finding basis was emitted only by the project-mode rerun, so basis is omitted here.",
+    "No artifact exists for this run; findings reference none."
+  ]
+}

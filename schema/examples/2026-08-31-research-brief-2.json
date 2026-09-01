@@ -12,6 +12,7 @@
     "date": "2026-08-31",
     "resumes": "2026-08-31-research-brief-1",
     "provenance": "backfilled",
+    "log": "designer-layer-substrate-test-2026-08-31-run-brief2.log",
     "note": "Backfilled from the 2026-08-31 session record. This run resumed the gated run with the human's answer and wrote the deliverable; together the two manifests record one round-trip through a judgment gate."
   },
   "artifacts": [

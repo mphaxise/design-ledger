@@ -11,6 +11,7 @@
     "status": "completed",
     "date": "2026-08-31",
     "provenance": "backfilled",
+    "log": "designer-layer-substrate-test-2026-08-31-run-fs.log",
     "note": "Backfilled from the 2026-08-31 session record. Finding content is verbatim from the run's deliverable."
   },
   "artifacts": [

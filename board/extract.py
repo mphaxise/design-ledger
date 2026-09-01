@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Extract evidence objects from OpenDesign runs and saved SSE logs.
+"""Extract evidence objects from run manifests, the daemon API, and SSE logs.
 
-v0: best-effort read of the local daemon API plus the SSE logs a run left
-behind; emits data.json for build_board.py. The board renders only what this
-file can honestly extract; everything session-recorded arrives via --facts
-and is labeled as such on the board.
+v0.1: run manifests (schema/run-manifest.schema.json) are the primary source
+for findings, assumptions, gates, decisions, recommendations, and contract
+checks. SSE logs stay authoritative for what the substrate measured: status,
+cost, tokens, wall time. The two are joined by the manifest's run.log hint
+(backfills) or run.session_id (emitted manifests). Facts files are retired;
+the session records that fed them now travel as backfilled manifests.
+
+Every manifest is checked against the schema before use; an invalid manifest
+is excluded and reported rather than rendered.
+
+Python 3 standard library only. The board renders from logs and manifests
+alone when the daemon is offline.
 
 Part of design-ledger. Apache-2.0.
 """
@@ -13,11 +21,16 @@ import glob
 import json
 import os
 import re
+import sys
 import time
 import urllib.request
 
-# v0 mapping from log-name suffix to (workflow, mode). Generic fallback: the
-# basename itself. Structured emission from runs replaces this in v1.
+REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, os.path.join(REPO, 'schema'))
+import validate as manifest_validator  # noqa: E402
+
+# Fallback mapping for logs that have no manifest. Generic fallback: the
+# basename itself. Emission from runs replaces this entirely.
 WORKFLOW_BY_SUFFIX = {
     'run.log': ('design-qa', 'chat'),
     'run-fs.log': ('design-qa', 'project'),
@@ -42,6 +55,7 @@ def fetch(url):
 
 
 def parse_log(path):
+    """Substrate-measured facts plus raw question-forms from one SSE log."""
     text, usage, end = [], None, None
     for line in open(path, encoding='utf-8', errors='replace'):
         line = line.strip()
@@ -70,13 +84,35 @@ def parse_log(path):
         forms.append({'form_id': m.group(1), 'title': m.group(2), 'questions': labels})
     u = (usage or {}).get('usage', {})
     return {
-        'status': (end or {}).get('status'),
+        'substrate_status': (end or {}).get('status'),
         'artifacts': (end or {}).get('artifactPaths') or [],
         'duration_ms': (usage or {}).get('durationMs'),
         'out_tokens': u.get('output_tokens'),
         'cost': (usage or {}).get('costUsd'),
         'forms': forms,
     }
+
+
+def load_manifests(mdir, notes):
+    """Load, schema-check, and index manifests by log hint."""
+    schema = json.load(open(manifest_validator.SCHEMA_PATH, encoding='utf-8'))
+    manifests, rejected = [], 0
+    for path in sorted(glob.glob(os.path.join(mdir, '*.json'))):
+        try:
+            m = json.load(open(path, encoding='utf-8'))
+        except Exception:
+            continue
+        if m.get('manifest') != 'design-ledger/run-manifest':
+            continue
+        errors = manifest_validator.validate_file(path, schema)
+        if errors:
+            rejected += 1
+            print(f'REJECTED {os.path.basename(path)}: {errors[0]}', file=sys.stderr)
+            continue
+        manifests.append(m)
+    if rejected:
+        notes.append(f'{rejected} manifest file(s) failed schema validation and are excluded from this board.')
+    return manifests
 
 
 def count_markers(path, markers):
@@ -91,35 +127,113 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('--daemon', default='http://127.0.0.1:7457')
     ap.add_argument('--logs-dir', required=True)
+    ap.add_argument('--manifests-dir', default=None)
     ap.add_argument('--artifacts-dir', default=None)
-    ap.add_argument('--facts', default=None)
     ap.add_argument('--out', required=True)
     a = ap.parse_args()
 
-    facts = json.load(open(a.facts)) if a.facts and os.path.exists(a.facts) else {}
+    notes = []
     health = fetch(a.daemon + '/api/health')
+    manifests = load_manifests(a.manifests_dir, notes) if a.manifests_dir else []
+    by_log = {m['run'].get('log'): m for m in manifests if m['run'].get('log')}
 
-    runs = []
+    # Runs: one row per log, joined to its manifest when one names it.
+    runs, unmatched_logs = [], 0
+    seen_manifests = set()
     for path in sorted(glob.glob(os.path.join(a.logs_dir, '*run*.log'))):
         base = os.path.basename(path)
-        suffix = next((s for s in WORKFLOW_BY_SUFFIX if base.endswith(s)), None)
-        wf, mode = WORKFLOW_BY_SUFFIX.get(suffix, (base, '?'))
         r = parse_log(path)
-        r.update({'workflow': wf, 'mode': mode, 'log': base})
+        r['log'] = base
+        m = by_log.get(base)
+        if m:
+            seen_manifests.add(m['run']['id'])
+            r.update({
+                'run_id': m['run']['id'],
+                'workflow': m['run']['workflow'],
+                'mode': m['run'].get('mode', '?'),
+                'status': m['run']['status'],
+                'provenance': m['run']['provenance'],
+                'resumes': m['run'].get('resumes'),
+            })
+            if m.get('artifacts'):
+                r['artifacts'] = [art['path'] for art in m['artifacts']]
+        else:
+            unmatched_logs += 1
+            suffix = next((s for s in WORKFLOW_BY_SUFFIX if base.endswith(s)), None)
+            wf, mode = WORKFLOW_BY_SUFFIX.get(suffix, (base, '?'))
+            r.update({'run_id': None, 'workflow': wf, 'mode': mode,
+                      'status': r['substrate_status'], 'provenance': None})
         runs.append(r)
+    # Manifests whose log is absent still describe runs.
+    for m in manifests:
+        if m['run']['id'] in seen_manifests:
+            continue
+        runs.append({
+            'log': m['run'].get('log'), 'run_id': m['run']['id'],
+            'workflow': m['run']['workflow'], 'mode': m['run'].get('mode', '?'),
+            'status': m['run']['status'], 'provenance': m['run']['provenance'],
+            'resumes': m['run'].get('resumes'), 'substrate_status': None,
+            'artifacts': [art['path'] for art in m.get('artifacts', [])],
+            'duration_ms': None, 'out_tokens': None, 'cost': None, 'forms': [],
+        })
+    if unmatched_logs:
+        notes.append(f'{unmatched_logs} log(s) have no manifest; their rows carry substrate stats only and workflow names guessed from filenames.')
 
-    gates = []
+    # Objects, flattened with run identity and provenance.
+    findings, assumptions, gates, decisions, recs, checks = [], [], [], [], [], []
+    for m in manifests:
+        rid, prov = m['run']['id'], m['run']['provenance']
+        decisions_by_id = {d['id']: d for d in m.get('decisions', [])}
+        for f in m.get('findings', []):
+            findings.append({**f, 'run': rid, 'provenance': prov})
+        for s in m.get('assumptions', []):
+            assumptions.append({**s, 'run': rid, 'provenance': prov})
+        for g in m.get('gates', []):
+            row = {
+                'gate_id': g['id'], 'title': g['title'], 'kind': g.get('kind'),
+                'blocking': g.get('blocking', True), 'state': g['state'],
+                'questions': [q.get('label', '') for q in g.get('questions', [])],
+                'run': rid, 'provenance': prov,
+            }
+            d = decisions_by_id.get(g.get('decision'))
+            if d:
+                row.update({'answer': d['answer'], 'by': d['by'],
+                            'on': d['at'], 'via': d.get('via')})
+            gates.append(row)
+        for d in m.get('decisions', []):
+            decisions.append({**d, 'run': rid, 'provenance': prov})
+        for rec in m.get('recommendations', []):
+            recs.append({'run': rid, 'text': rec['text'],
+                         'state': rec.get('state', 'awaiting-decision'),
+                         'source': rec.get('artifact'), 'provenance': prov})
+        c = m.get('contract')
+        if c:
+            held_all = all(i.get('held') for i in c.get('items', []))
+            checks.append({'run': rid, 'held': held_all,
+                           'declared_by': c['declared_by'],
+                           'items': c.get('items', [])})
+        for lim in m.get('limits', []):
+            notes.append(f'{rid}: {lim}')
+
+    # A gate answered by a resumed run supersedes its open instance from the
+    # gated run. Both stay on the board as history; the open one is marked.
+    answered_ids = {g['gate_id'] for g in gates if g['state'] == 'answered'}
+    for g in gates:
+        if g['state'] == 'open' and g['gate_id'] in answered_ids:
+            g['superseded'] = True
+
+    # Gates parsed from logs for runs without manifests, so nothing hides.
+    manifest_gate_keys = {(g['run'], g['gate_id']) for g in gates}
     for r in runs:
-        for f in r['forms']:
-            g = dict(f)
-            g['run'] = r['workflow']
-            ans = (facts.get('gate_answers') or {}).get(f['form_id'])
-            if ans:
-                g['state'] = 'answered'
-                g.update(ans)
-            else:
-                g['state'] = 'open'
-            gates.append(g)
+        if r.get('run_id'):
+            continue
+        for f in r.get('forms', []):
+            if (None, f['form_id']) in manifest_gate_keys:
+                continue
+            gates.append({'gate_id': f['form_id'], 'title': f['title'],
+                          'kind': None, 'blocking': True, 'state': 'open',
+                          'questions': f['questions'], 'run': r['workflow'],
+                          'provenance': None})
 
     tallies = {}
     if a.artifacts_dir:
@@ -127,6 +241,7 @@ def main():
         qa = os.path.join(a.artifacts_dir, 'designer-layer-substrate-test-2026-08-31-artifact.html')
         tallies['pmf-review evidence labels'] = count_markers(pmf, ['strong', 'partial', 'assumption'])
         tallies['design-qa basis labels'] = count_markers(qa, ['Reported', 'Derived', 'Unverified'])
+        notes.append('Marker tallies are case-insensitive string counts over artifact files; the schema-backed objects above are the parsed data.')
 
     totals = {
         'runs': len(runs),
@@ -139,14 +254,18 @@ def main():
         'daemon': {'ok': bool(health and health.get('ok')), 'version': (health or {}).get('version')},
         'totals': totals,
         'runs': runs,
+        'findings': findings,
+        'assumptions': assumptions,
         'gates': gates,
-        'recommendations': facts.get('recommendations', []),
-        'contract_checks': facts.get('contract_checks', []),
+        'decisions': decisions,
+        'recommendations': recs,
+        'contract_checks': checks,
         'tallies': tallies,
-        'honesty': facts.get('honesty', []),
+        'honesty': notes,
     }
     json.dump(data, open(a.out, 'w'), indent=1)
-    print('WROTE', a.out, '| runs', len(runs), '| gates', len(gates))
+    print('WROTE', a.out, '| runs', len(runs), '| manifests', len(manifests),
+          '| findings', len(findings), '| gates', len(gates))
 
 
 if __name__ == '__main__':

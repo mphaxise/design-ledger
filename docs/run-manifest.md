@@ -20,11 +20,11 @@ Gate answers belong to humans. A `decision` records who answered (`by`), what (`
 
 **Artifact** paths are workspace-relative. The validator rejects absolute paths, home paths, and parent traversal, because manifests travel and machine paths must stay on the machine.
 
-**Finding** requires `statement`, `severity` (`P0` to `P3`), and `basis`. The basis enum `reported | derived | unverified` is the evidence-basis column the design-qa run emitted on 2026-08-31, lowercased.
+**Finding** requires `statement` and `severity` (`P0` to `P3`). The basis enum `reported | derived | unverified` is the evidence-basis column the design-qa run emitted on 2026-08-31, lowercased. Basis is optional because the ux-review run, same day, emitted findings with fixes and rationale and no basis column; a backfill omits what the run did not label rather than inventing a grade.
 
 **Assumption** requires a `statement` and offers `basis` (what the assumption leans on), `impact_if_wrong`, and a lifecycle `status` (`open | tested | confirmed | refuted`). The shape follows the assumption entries the research-brief run wrote, which pair each assumed number with why it was assumed and how the result should be read if the assumption breaks.
 
-**Gate** and its `questions` mirror the question-form structure OpenDesign rendered: ids, labels, typed inputs, options with values and descriptions, defaults. `blocking` defaults to true; every mandatory contract gate blocks. A gate is `open` or `answered`, and an answered gate names its `decision`.
+**Gate** and its `questions` mirror the question-form structure OpenDesign rendered: ids, labels, typed inputs, options with values and descriptions, defaults. The genesis runs showed two gate patterns, and `blocking` separates them. A blocking gate withholds the deliverable until answered: the research-brief run held at one. A checkpoint gate rides with a delivered artifact and blocks the next decision instead: the design-qa and ux-review runs completed their deliverables with checkpoint gates open. `blocking` defaults to true, so an unmarked open gate reads as stopped work. A gate is `open` or `answered`, and an answered gate names its `decision`.
 
 **Decision** requires `id`, `gate`, `answer`, `by`, and `at`. `answers` maps question ids to values when they were captured; the recorded genesis decision captured one of three question answers, and the example manifest lists exactly that one.
 

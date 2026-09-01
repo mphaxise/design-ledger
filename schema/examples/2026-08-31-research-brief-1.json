@@ -11,6 +11,7 @@
     "status": "gated",
     "date": "2026-08-31",
     "provenance": "backfilled",
+    "log": "designer-layer-substrate-test-2026-08-31-run-brief.log",
     "note": "Backfilled from the 2026-08-31 session record; the run predates this schema. Gate content is verbatim from the run's question-form as parsed out of the saved SSE log."
   },
   "artifacts": [],

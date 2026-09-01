@@ -15,16 +15,16 @@ Six live runs inside OpenDesign 0.21.1, driven through its daemon API with Claud
 - One run refused to write its deliverable until a human answered its scope gate, resumed with the answer, and completed the brief. The judgment loop closed across substrate, agent, and a phone.
 - Total model spend for the whole suite: $6.31.
 
-The contract checks and gate answers behind these claims ship as the board's facts file (`board/facts/`). Full run logs stay local to the machine that produced them.
+The contract checks, gate answers, findings, and assumptions behind these claims ship as backfilled run manifests (`schema/examples/`), validated against the v0.1 schema. Full run logs stay local to the machine that produced them.
 
-## The Evidence Board (v0)
+## The Evidence Board (v0.1)
 
-The board renders runs as objects: status, cost, artifacts, gates with their answer state, standing recommendations, evidence tallies, and a section named "What this board cannot see yet." It is a read-only projection generated from the daemon API plus run logs.
+The board renders runs as objects: status, cost, artifacts, findings, assumptions, gates with their answer state, standing recommendations, and a section named "What this board cannot see yet." It is a read-only projection generated from run manifests (`docs/run-manifest.md`) joined with the daemon API and run logs; manifests carry the objects, logs carry what the substrate measured.
 
 ```
 python3 board/extract.py --logs-dir <dir-with-sse-logs> \
   --artifacts-dir <dir-with-run-artifacts> \
-  --facts board/facts/2026-08-31-substrate-test.json \
+  --manifests-dir schema/examples \
   --out board/out/data.json
 python3 board/build_board.py --data board/out/data.json --out board/out/board.html
 ```
@@ -41,7 +41,7 @@ Chat is an input method. The home surface for design practice is the ledger: a p
 
 ## Status
 
-v0, day one. Real: the board, the four workflow ports, the substrate evidence above. Planned: structured emission from runs, a write path from board to substrate, the graduation loop, more substrates. `ROADMAP.md` carries the sequence and is explicit about which is which.
+v0.1 in progress. Real: the board, the four workflow ports, the substrate evidence above, the run-manifest schema with six backfilled genesis manifests, and a board that renders from manifests. Planned: manifest emission wired into live runs, a write path from board to substrate, the graduation loop, more substrates. `ROADMAP.md` carries the sequence and is explicit about which is which.
 
 ## License
 

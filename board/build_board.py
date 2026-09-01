@@ -80,8 +80,12 @@ a{color:var(--accent)}
 
 def tiles(d):
     t = d['totals']
-    gates = d['gates']
-    answered = sum(1 for g in gates if g['state'] == 'answered')
+    distinct = {}
+    for g in d['gates']:
+        if distinct.get(g['gate_id']) != 'answered':
+            distinct[g['gate_id']] = g['state']
+    gates = list(distinct.values())
+    answered = sum(1 for s in gates if s == 'answered')
     held = sum(1 for c in d['contract_checks'] if c.get('held'))
     cells = [
         (t['runs'], 'runs'),
@@ -90,6 +94,8 @@ def tiles(d):
         (fmt_ms(t['wall_ms']), 'agent wall time'),
         (f"{answered}/{len(gates)}", 'gates answered'),
         (f"{held}/{len(d['contract_checks'])}", 'contracts held'),
+        (len(d.get('findings', [])), 'findings on record'),
+        (len(d.get('assumptions', [])), 'assumptions on record'),
     ]
     inner = ''.join(f'<div class="tile"><div class="n">{esc(n)}</div>'
                     f'<div class="l">{esc(l)}</div></div>' for n, l in cells)
@@ -99,20 +105,54 @@ def tiles(d):
 def runs_table(d):
     rows = []
     for r in d['runs']:
-        ok = r['status'] == 'succeeded'
-        st = f'<span class="status {"ok" if ok else "open"}">' \
-             f'{"✓ succeeded" if ok else "◌ " + esc(r["status"])}</span>'
+        ok = r['status'] in ('succeeded', 'completed')
+        icon = '✓ ' if ok else '◌ '
+        st = f'<span class="status {"ok" if ok else "open"}">{icon}{esc(r["status"])}</span>'
         art = ', '.join(esc(a) for a in r['artifacts']) or \
               '<span class="meta">gates / text</span>'
+        prov = esc(r.get('provenance') or 'no manifest')
         rows.append(
             f'<tr><td>{esc(r["workflow"])}</td><td>{esc(r["mode"])}</td>'
             f'<td>{st}</td><td class="num">{fmt_ms(r["duration_ms"])}</td>'
             f'<td class="num">{r["out_tokens"] or "—"}</td>'
             f'<td class="num">${round(r["cost"], 2) if r["cost"] else "—"}</td>'
-            f'<td>{art}</td></tr>')
+            f'<td>{art}</td><td class="num">{prov}</td></tr>')
     return ('<table><tr><th>workflow</th><th>mode</th><th>status</th><th>time</th>'
-            '<th>out tok</th><th>cost</th><th>deliverable</th></tr>'
+            '<th>out tok</th><th>cost</th><th>deliverable</th><th>manifest</th></tr>'
             + ''.join(rows) + '</table>')
+
+
+def findings_table(d):
+    if not d.get('findings'):
+        return '<p class="sub">No findings on record yet.</p>'
+    rows = []
+    for f in sorted(d['findings'], key=lambda x: x.get('severity', 'P9')):
+        rows.append(
+            f'<tr><td class="num">{esc(f.get("severity"))}</td>'
+            f'<td><b>{esc(f.get("title") or f["id"])}</b><br>'
+            f'<span class="sub">{esc(f["statement"])}</span></td>'
+            f'<td class="num">{esc(f.get("basis") or "—")}</td>'
+            f'<td class="num">{esc(f.get("status", "open"))}</td>'
+            f'<td class="num">{esc(f["run"])}</td></tr>')
+    return ('<table><tr><th>sev</th><th>finding</th><th>basis</th><th>status</th>'
+            '<th>run</th></tr>' + ''.join(rows) + '</table>')
+
+
+def assumptions_cards(d):
+    if not d.get('assumptions'):
+        return '<p class="sub">No assumptions on record yet.</p>'
+    cards = []
+    for s in d['assumptions']:
+        extra = ''
+        if s.get('basis'):
+            extra += f'<p class="answer"><b>Basis:</b> {esc(s["basis"])}</p>'
+        if s.get('impact_if_wrong'):
+            extra += f'<p class="answer"><b>If wrong:</b> {esc(s["impact_if_wrong"])}</p>'
+        cards.append(
+            f'<div class="card open"><h3>{esc(s["statement"])}</h3>'
+            f'<div class="from">assumption · {esc(s["run"])} · {esc(s.get("status", "open"))}</div>'
+            f'{extra}</div>')
+    return f'<div class="cards">{"".join(cards)}</div>'
 
 
 def gate_cards(d):
@@ -123,17 +163,23 @@ def gate_cards(d):
             tail = (f'<p class="answer"><b>Answered:</b> {esc(g.get("answer"))} '
                     f'<span class="meta">— {esc(g.get("by"))}, {esc(g.get("on"))}, '
                     f'{esc(g.get("via"))}</span></p>')
+        elif g.get('superseded'):
+            tail = '<p class="answer">◌ open at emission — the resumed run carries the answer</p>'
+        elif g.get('blocking', True):
+            tail = '<p class="answer status open">◌ open — work blocked on a human decision</p>'
         else:
-            tail = '<p class="answer status open">◌ open — awaiting a human decision</p>'
+            tail = '<p class="answer status open">◌ open checkpoint — deliverable exists, next step awaits a human</p>'
+        kind = f' · {esc(g["kind"])}' if g.get('kind') else ''
         cards.append(
             f'<div class="card {g["state"]}"><h3>{esc(g["title"])}</h3>'
-            f'<div class="from">gate · {esc(g["run"])}</div><ul>{qs}</ul>{tail}</div>')
+            f'<div class="from">gate{kind} · {esc(g["run"])}</div><ul>{qs}</ul>{tail}</div>')
     for rec in d['recommendations']:
+        src = f' · {esc(rec["source"])}' if rec.get('source') else ''
         cards.append(
             f'<div class="card open"><h3>Recommendation</h3>'
-            f'<div class="from">verdict · {esc(rec["run"])} · {esc(rec["source"])}</div>'
+            f'<div class="from">verdict · {esc(rec["run"])}{src}</div>'
             f'<p class="answer">“{esc(rec["text"])}”</p>'
-            f'<p class="answer status open">◌ {esc(rec.get("state", "awaiting decision"))}</p></div>')
+            f'<p class="answer status open">◌ {esc(rec.get("state", "awaiting-decision"))}</p></div>')
     return f'<div class="cards">{"".join(cards)}</div>'
 
 
@@ -157,7 +203,8 @@ def main():
                    else 'daemon offline — log evidence only')
     honesty = ''.join(f'<p>{esc(h)}</p>' for h in d['honesty'])
     checks = ''.join(
-        f'<span class="chip">{esc(c["run"])} · {"held ✓" if c.get("held") else "broke ✗"}</span>'
+        f'<span class="chip">{esc(c["run"])} · {"held ✓" if c.get("held") else "broke ✗"}'
+        f'{" · " + esc(c["declared_by"]) if c.get("declared_by") else ""}</span>'
         for c in d['contract_checks'])
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
@@ -166,14 +213,16 @@ def main():
 <h1>Evidence Board</h1>
 <p class="sub">Design work as a ledger of runs, gates, decisions, and evidence —
 the transcript is upstream, this is the state.</p>
-<p class="meta">generated {esc(d['generated'])} · {daemon_line} · read-only projection v0</p>
+<p class="meta">generated {esc(d['generated'])} · {daemon_line} · read-only projection v0.1</p>
 {tiles(d)}
 <h2>Runs</h2>{runs_table(d)}
+<h2>Findings</h2>{findings_table(d)}
 <h2>Gates &amp; decisions</h2>{gate_cards(d)}
+<h2>Assumptions</h2>{assumptions_cards(d)}
 <h2>Contract fidelity</h2><div class="chips">{checks}</div>
 <h2>Evidence label tallies</h2>{tally_chips(d)}
 <h2>What this board cannot see yet</h2><div class="honesty">{honesty}</div>
-<p class="foot">design-ledger · board v0 · data: {esc(a.data)}</p>
+<p class="foot">design-ledger · board v0.1 · data: {esc(a.data)}</p>
 </div></body></html>"""
     open(a.out, 'w').write(page)
     print('WROTE', a.out, len(page), 'bytes')

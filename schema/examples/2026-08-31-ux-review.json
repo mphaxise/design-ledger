@@ -1,0 +1,112 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-08-31-ux-review",
+    "workflow": "ux-review",
+    "skill_id": "pk-ux-review",
+    "substrate": { "name": "opendesign", "version": "0.21.1" },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "completed",
+    "date": "2026-08-31",
+    "provenance": "backfilled",
+    "log": "designer-layer-substrate-test-2026-08-31-run-ux.log",
+    "note": "Backfilled from the 2026-08-31 session record. Finding and gate content is verbatim from the run's deliverable and question-form; render-only form attributes (placeholders, custom-input labels) are omitted."
+  },
+  "artifacts": [
+    {
+      "id": "review",
+      "path": "plant-care-reminders-ux-review.md",
+      "kind": "report",
+      "title": "Plant care reminders UX review"
+    }
+  ],
+  "findings": [
+    {
+      "id": "P0-1",
+      "title": "No recovery path punishes correct behavior",
+      "statement": "A user who waters a plant on Tuesday when the app expected Thursday has no way to say so. The task stays open, then goes overdue, then counts toward the risk threshold. The user did the right thing and the app records a failure.",
+      "severity": "P0",
+      "impact": "Low-knowledge owners water reactively: drooping leaves, dry soil, a spare five minutes on a Saturday. The app's model diverges from reality within days and never reconverges. Once a user learns the checkboxes don't reflect what they actually did, the whole surface loses authority.",
+      "fix": "Three actions on every task row, native swipe on both platforms: 'Did this earlier' with a date picker defaulted to yesterday (completing at time T resets the interval from T), 'Skip this cycle' recorded as an explicit skipped state, and 'Snooze' to the next batch window.",
+      "artifact": "review",
+      "status": "open"
+    },
+    {
+      "id": "P0-2",
+      "title": "Rollover creates unbounded, undifferentiated debt",
+      "statement": "Missed tasks stack silently. Nothing expires. A watering task from 11 days ago sits alongside today's.",
+      "severity": "P0",
+      "impact": "This is the direct mechanical cause of reminder spam. The batch count is a running total of every past failure, so it only goes up.",
+      "artifact": "review",
+      "status": "open"
+    }
+  ],
+  "assumptions": [],
+  "gates": [
+    {
+      "id": "ux-review-checkpoint",
+      "title": "Perspective checkpoint",
+      "kind": "checkpoint",
+      "description": "Three calls before this becomes an implementation plan.",
+      "questions": [
+        {
+          "id": "non_negotiable_feeling",
+          "label": "Which user feeling is non-negotiable in this flow?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "competent",
+          "description": "My recommendation is 'competent, not scolded' — it is the feeling the current escalation ladder actively destroys, and it is the one week-3 churn is most likely testing.",
+          "options": [
+            { "value": "competent", "label": "Competent, never scolded (Recommended)" },
+            { "value": "in_control", "label": "In control of the schedule, not managed by it" },
+            { "value": "attached", "label": "Attached to the specific plants they own" },
+            { "value": "unburdened", "label": "Unburdened — the app asks for as little as possible" }
+          ]
+        },
+        {
+          "id": "tradeoff",
+          "label": "Speed-first or craft-first for the 2-sprint budget?",
+          "type": "radio",
+          "required": true,
+          "default": "craft_first",
+          "description": "A: ship all three P0s plus notification copy in Sprint 1, defer the wizard rebuild and photos to a later quarter. Fastest path to killing the review complaints, leaves the schedule-accuracy root cause untouched. B: the split in the review — P0s in Sprint 1, wizard and photos in Sprint 2. Slower to visible relief, higher confidence on week-3 retention.",
+          "options": [
+            { "value": "speed_first", "label": "Option A — speed-first, minimum quality bar" },
+            { "value": "craft_first", "label": "Option B — craft-first, both sprints as scoped (Recommended)" }
+          ]
+        },
+        {
+          "id": "approve_priority",
+          "label": "Approve this priority order for implementation?",
+          "type": "radio",
+          "required": true,
+          "default": "approve",
+          "description": "P0-2 (task expiry) is the load-bearing one. If only one thing ships, it should be that.",
+          "options": [
+            { "value": "approve", "label": "Approved as ordered" },
+            { "value": "reorder", "label": "Approve with changes — I'll note them below" },
+            { "value": "hold", "label": "Hold until the notification-payload and churn-cause questions are answered" }
+          ]
+        },
+        {
+          "id": "notes",
+          "label": "Reordering, constraints, or data you already have",
+          "type": "textarea",
+          "required": false
+        }
+      ],
+      "blocking": false,
+      "state": "open"
+    }
+  ],
+  "decisions": [],
+  "recommendations": [],
+  "limits": [
+    "The deliverable's remaining prioritized issues (a third P0 and the P1s referenced by the gate descriptions) were not backfilled as objects; two P0s are.",
+    "The ux-review deliverable carries fixes and rationale per finding and no evidence-basis column, so these findings omit basis.",
+    "The checkpoint gate rode with the delivered review and blocks implementation, so it is recorded blocking: false and open; no answer exists in the session record."
+  ]
+}
