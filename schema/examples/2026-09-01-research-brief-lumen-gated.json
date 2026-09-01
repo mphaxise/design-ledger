@@ -1,0 +1,352 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "research-brief-lumen-2026-09-01",
+    "workflow": "research-brief",
+    "skill_id": "pk-research-brief",
+    "substrate": {
+      "name": "open-design"
+    },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "gated",
+    "date": "2026-09-01",
+    "provenance": "emitted",
+    "log": "designer-layer-emission-test-2026-09-01-run-brief.log",
+    "note": "Stopped at the mandatory uncertainty gate. The strategy gate was already answered inside Praneet's brief; the scope-posture choice was not, and it changes which instruments the three-week field window can carry. Deliverable withheld."
+  },
+  "findings": [
+    {
+      "id": "finding-solar-base-share-unmeasured",
+      "title": "Solar penetration of the base is unmeasured",
+      "statement": "Lumen does not know what share of its 4,100 free installs and 210 paying subscribers actually has solar, so the solar-export request cannot be converted into an addressable-user count.",
+      "severity": "P0",
+      "basis": "reported",
+      "impact": "Without this number the solar bet cannot be sized against the reliability bet at quarterly planning.",
+      "status": "open",
+      "tags": [
+        "unknown",
+        "sizing"
+      ]
+    },
+    {
+      "id": "finding-linking-churn-link-untested",
+      "title": "Linking failure as a churn cause is asserted, not tested",
+      "statement": "High support load from utility-linking failures is observed, but no analysis ties linking failure to free-user churn.",
+      "severity": "P0",
+      "basis": "reported",
+      "impact": "The reliability bet currently rests on support cost alone, which is a different and weaker argument than retention.",
+      "status": "open",
+      "tags": [
+        "unknown",
+        "causality"
+      ]
+    },
+    {
+      "id": "finding-feedback-share-is-not-base-share",
+      "title": "38% of feedback is not 38% of users",
+      "statement": "The 38% figure describes the share of the feedback corpus, which is produced by the users motivated enough to write in, and does not estimate demand across the install base.",
+      "severity": "P1",
+      "basis": "derived",
+      "impact": "Treating the feedback share as demand overstates the solar bet by an unknown factor; the study must measure the base directly rather than reweight the feedback.",
+      "status": "open",
+      "tags": [
+        "selection-bias",
+        "measurement"
+      ]
+    },
+    {
+      "id": "finding-paid-frame-too-small-for-subgroups",
+      "title": "The paying cohort is too small for subgroup claims",
+      "statement": "At 210 paying subscribers, any split of the paid segment by solar ownership or linking history produces intervals too wide to separate the two bets.",
+      "severity": "P1",
+      "basis": "derived",
+      "impact": "The brief must commit in advance to base-wide estimates and treat paid-only cuts as directional, or the results will be over-read at planning.",
+      "status": "open",
+      "tags": [
+        "sample-frame",
+        "statistics"
+      ]
+    },
+    {
+      "id": "finding-analysis-window-is-one-week",
+      "title": "Three weeks of study inside a four-week deadline leaves about one week to land it",
+      "statement": "The stated three-week research window and four-week decision deadline leave roughly one week for analysis, write-up, and socialization before quarterly planning.",
+      "severity": "P1",
+      "basis": "derived",
+      "impact": "Any method whose analysis is slow, such as open-coding a large qualitative corpus, will miss the decision rather than inform it.",
+      "status": "open",
+      "tags": [
+        "timeline",
+        "feasibility"
+      ]
+    },
+    {
+      "id": "finding-incentive-budget-forces-one-method",
+      "title": "The incentive budget realistically funds one paid method",
+      "statement": "A $500 incentive budget split across paid interviews and survey incentives weakens both rather than funding two credible instruments.",
+      "severity": "P2",
+      "basis": "derived",
+      "impact": "The allocation follows from the scope posture, which is the open gate; it cannot be decided first.",
+      "status": "open",
+      "tags": [
+        "resources"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "assumption-linking-telemetry-queryable",
+      "statement": "Utility-linking attempt and failure events are logged per account and can be joined to retention data inside the three-week window.",
+      "basis": "Not stated in the brief; assumed because the team reports linking 'fails often', which implies some instrumentation or ticket trail.",
+      "impact_if_wrong": "The churn question drops to self-reported reasons only, which cannot establish causality, and the reliability bet stays unsized.",
+      "status": "open",
+      "tags": [
+        "access"
+      ]
+    },
+    {
+      "id": "assumption-churn-is-defined",
+      "statement": "Lumen has a working definition of churn for a free install base, such as an inactivity threshold or an uninstall signal.",
+      "basis": "The brief asks whether linking failures cause free-user churn without stating how churn is counted.",
+      "impact_if_wrong": "The primary outcome variable has to be defined during the study, consuming part of the field window.",
+      "status": "open",
+      "tags": [
+        "definition"
+      ]
+    },
+    {
+      "id": "assumption-no-existing-solar-attribute",
+      "statement": "No profile field, onboarding answer, or utility-derived signal already identifies solar households.",
+      "basis": "The brief lists solar penetration as an unknown.",
+      "impact_if_wrong": "A census instrument may be unnecessary and the field window can be reallocated.",
+      "status": "open",
+      "tags": [
+        "existing-data"
+      ]
+    },
+    {
+      "id": "assumption-email-is-the-channel",
+      "statement": "Email is the only confirmed way to reach both cohorts, and in-app intercepts are not available or not sanctioned.",
+      "basis": "The brief names email reachability and no other channel.",
+      "impact_if_wrong": "An in-app intercept would raise response rates and change the sampling plan materially.",
+      "status": "open",
+      "tags": [
+        "recruiting"
+      ]
+    },
+    {
+      "id": "assumption-bets-are-exclusive",
+      "statement": "Solar-export tracking and utility-linking reliability compete for the same quarter and cannot be partially split.",
+      "basis": "The brief frames the quarter as an either/or.",
+      "impact_if_wrong": "If a split is possible, the brief should produce sequencing evidence rather than a winner.",
+      "status": "open",
+      "tags": [
+        "scope"
+      ]
+    },
+    {
+      "id": "assumption-support-tickets-segmentable",
+      "statement": "Support tickets can be filtered to linking failures and joined back to accounts.",
+      "basis": "The team reports high support load specific to linking, which implies some categorization.",
+      "impact_if_wrong": "Existing support data cannot be reused and the study must generate its own failure evidence.",
+      "status": "open",
+      "tags": [
+        "access"
+      ]
+    },
+    {
+      "id": "assumption-researcher-capacity-unknown",
+      "statement": "'One part-time researcher' is treated as roughly half a full-time week; actual hours are not stated.",
+      "basis": "The brief gives headcount without hours.",
+      "impact_if_wrong": "Method count and sample sizes in the eventual plan are over- or under-scoped.",
+      "status": "open",
+      "tags": [
+        "resources"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "id": "gate-strategy-decision-target",
+      "title": "What decision must this brief unblock today?",
+      "kind": "strategy",
+      "description": "The mandatory strategy checkpoint. Praneet answered it in the originating brief rather than in response to a prompt.",
+      "blocking": true,
+      "state": "answered",
+      "decision": "decision-strategy-target"
+    },
+    {
+      "id": "gate-uncertainty-scope-posture",
+      "title": "Optimize this study for confidence and narrow scope, or for learning speed and broader exploration?",
+      "kind": "uncertainty",
+      "description": "The mandatory uncertainty checkpoint. With one part-time researcher, three weeks, and $500, the plan cannot both produce a defensible sizing number and explore both bets qualitatively. The choice determines the instruments, the sample plan, and the incentive allocation, so the brief is withheld until it is made. Two supporting questions on data access are bundled because they change the method plan by more than the posture does if either answer is negative.",
+      "blocking": true,
+      "state": "open",
+      "questions": [
+        {
+          "id": "scope-posture",
+          "label": "Which posture should the three-week study take?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "option-a-confidence",
+          "options": [
+            {
+              "value": "option-a-confidence",
+              "label": "Option A — confidence, narrow scope (Recommended)",
+              "description": "Two instruments only: a census of the full reachable base to size solar ownership, and a behavioral retention analysis of linking failures against existing telemetry. Produces defensible numbers for both unknowns and almost no texture about why."
+            },
+            {
+              "value": "option-b-learning-speed",
+              "label": "Option B — learning speed, broader exploration",
+              "description": "A shorter survey plus paid interviews across solar owners and lapsed free users plus a lighter telemetry read. Produces richer understanding of both bets and weaker numbers on either, with wider intervals at planning."
+            }
+          ]
+        },
+        {
+          "id": "telemetry-access",
+          "label": "Can we query utility-linking attempts and failures per account, joined to retention?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "yes-queryable",
+          "options": [
+            {
+              "value": "yes-queryable",
+              "label": "Yes — events and account retention are both queryable"
+            },
+            {
+              "value": "partial-support-only",
+              "label": "Partial — support tickets only, no product telemetry"
+            },
+            {
+              "value": "no-behavioral-data",
+              "label": "No — neither is available in the window"
+            },
+            {
+              "value": "unsure",
+              "label": "Unsure — needs a check before the plan is fixed"
+            }
+          ]
+        },
+        {
+          "id": "intercept-channel",
+          "label": "Besides email, can the study use an in-app intercept?",
+          "type": "radio",
+          "required": false,
+          "allow_custom": true,
+          "default": "email-only",
+          "options": [
+            {
+              "value": "email-only",
+              "label": "Email only"
+            },
+            {
+              "value": "in-app-available",
+              "label": "In-app intercept is available and sanctioned"
+            },
+            {
+              "value": "in-app-needs-build",
+              "label": "Possible, but needs engineering work we would have to fund from the quarter"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gate-recommendation-approval",
+      "title": "Approve the recommendation path before implementation?",
+      "kind": "tradeoff",
+      "description": "The mandatory pre-irreversible checkpoint. Deferred, not yet put to Praneet: it becomes answerable only once the brief exists and names a fieldwork path. Recorded here so the downstream run inherits it rather than skipping it.",
+      "blocking": true,
+      "state": "open"
+    }
+  ],
+  "decisions": [
+    {
+      "id": "decision-strategy-target",
+      "gate": "gate-strategy-decision-target",
+      "answer": "Whether next quarter's build goes to solar-export tracking or to utility-linking reliability, decided at quarterly planning four weeks from today.",
+      "by": "Praneet Koppula",
+      "at": "2026-09-01",
+      "via": "OpenDesign chat brief",
+      "channel": "other"
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-measure-solar-by-census",
+      "text": "Size solar ownership by asking the full reachable base directly rather than reweighting the existing feedback corpus, because the 38% figure describes writers, not users.",
+      "state": "awaiting-decision",
+      "tags": [
+        "method"
+      ]
+    },
+    {
+      "id": "rec-test-churn-behaviorally-first",
+      "text": "Test the linking-failure-to-churn link against retention data first and use stated reasons only as corroboration; asking lapsed users why they left cannot establish the causal claim the decision needs.",
+      "state": "awaiting-decision",
+      "tags": [
+        "method"
+      ]
+    },
+    {
+      "id": "rec-fund-one-paid-method",
+      "text": "Commit the $500 incentive budget to a single paid instrument selected by the scope posture rather than splitting it across a survey and interviews.",
+      "state": "awaiting-decision",
+      "tags": [
+        "resources"
+      ]
+    }
+  ],
+  "contract": {
+    "declared_by": "run",
+    "items": [
+      {
+        "item": "Objective and decision target",
+        "held": true,
+        "note": "Captured as decision-strategy-target; carries into the deliverable."
+      },
+      {
+        "item": "Hypotheses",
+        "held": false,
+        "note": "Withheld with the deliverable; hypothesis framing depends on the scope posture."
+      },
+      {
+        "item": "Method plan",
+        "held": false,
+        "note": "Withheld with the deliverable; this is what the open gate decides."
+      },
+      {
+        "item": "Open risks and next actions",
+        "held": false,
+        "note": "Withheld with the deliverable; risks are recorded here as findings and assumptions in the interim."
+      },
+      {
+        "item": "No fabricated citations, quotes, or metrics",
+        "held": true,
+        "note": "Every count restates Praneet's brief; derived findings are arithmetic on those counts and are labelled derived."
+      },
+      {
+        "item": "Unknowns marked as assumptions",
+        "held": true,
+        "note": "Seven assumptions recorded, all open."
+      },
+      {
+        "item": "Skill executes no studies",
+        "held": true
+      }
+    ]
+  },
+  "limits": [
+    "No access to Lumen's product analytics, support system, user table, or feedback corpus this run; every count is restated from Praneet's brief and none of them was independently verified.",
+    "The 38% feedback figure was not audited: the size of the feedback corpus, its collection window, and its collection channel are all unknown.",
+    "Churn is not defined for the free install base in the brief, so the primary outcome variable of the reliability question is unspecified.",
+    "'One part-time researcher' is not expressed in hours per week, so no feasibility claim about method count or sample size can be made yet.",
+    "Whether linking telemetry and account retention can actually be joined is unverified and is posed as a gate question, not assumed.",
+    "The deliverable brief was not written this run; the open scope-posture gate withholds it.",
+    "No editorial-guard prose pass was run because no prose deliverable was produced."
+  ]
+}

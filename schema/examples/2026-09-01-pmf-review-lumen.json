@@ -1,0 +1,443 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "pmf-lumen-2026-09-01",
+    "workflow": "pmf-review",
+    "skill_id": "pk-pmf-review",
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "completed",
+    "date": "2026-09-01",
+    "provenance": "emitted",
+    "log": "designer-layer-emission-test-2026-09-01-run-pmf.log",
+    "note": "PMF/FMF signal review of Lumen (home-energy monitoring, $6/mo consumer subscription). Question posed: raise a seed on the consumer-subscription thesis, or pivot to B2B white-label for utilities. Deliverable written; three checkpoint gates ride with it, none blocking."
+  },
+  "artifacts": [
+    {
+      "id": "lumen-pmf-review",
+      "path": "lumen-pmf-review.html",
+      "kind": "report",
+      "title": "Lumen — PMF/FMF Review"
+    }
+  ],
+  "findings": [
+    {
+      "id": "finding-viral-not-channel",
+      "title": "Acquisition is one unrepeatable event, not a channel",
+      "statement": "71% of the 4,100 installs came from a single Reddit post, leaving a non-viral baseline of roughly 1,189 installs over 90 days (~13/day) as the only readable evidence of standing demand.",
+      "severity": "P0",
+      "basis": "derived",
+      "location": "evidence audit, row-installs",
+      "impact": "A seed investor underwrites repeatable acquisition. A viral post cannot be bought again, so the install total does not support the growth claim it is being used for.",
+      "fix": "Split retention and conversion by acquisition source, then buy a real CAC number against a defined segment (Test 1, Test 2).",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "partial",
+        "acquisition",
+        "pmf"
+      ]
+    },
+    {
+      "id": "finding-cac-untested",
+      "title": "CAC is untested and is the first diligence question",
+      "statement": "With acquisition entirely organic, the company cannot answer the single number a seed investor asks first, and every unit-economics claim rests on it.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "evidence audit, row-cac",
+      "impact": "Walking into a seed meeting with no CAC figure ends the meeting regardless of how the other metrics read.",
+      "fix": "Spend $3-5k over weeks 2-5 against the solar segment to establish an order of magnitude, alongside a parallel price test.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "assumption",
+        "unit-economics"
+      ]
+    },
+    {
+      "id": "finding-ltv-ceiling",
+      "title": "The $6 price sets a CAC ceiling near $19",
+      "statement": "At $6/mo net of a 15% store fee and an 11.1-month expected life implied by 9% monthly churn, net LTV is approximately $57, capping CAC near $19 for a 3:1 return.",
+      "severity": "P0",
+      "basis": "derived",
+      "location": "arithmetic, ledger-ltv",
+      "impact": "A $19 blended CAC on a consumer utility app is a hard bar, making price rather than growth the binding constraint on the consumer thesis.",
+      "fix": "Test a $15-20/mo solar tier, which lifts the CAC ceiling to roughly $57 at the same churn rate.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "derived",
+        "unit-economics",
+        "pricing"
+      ]
+    },
+    {
+      "id": "finding-blended-d30",
+      "title": "22% D30 is uninterpretable until cohort-split",
+      "statement": "Holding the blend at 22% across a 71/29 viral-to-organic mix, a 15% viral cohort implies a 39% organic cohort while a 22% viral cohort implies 22% organic — two different companies.",
+      "severity": "P0",
+      "basis": "derived",
+      "location": "arithmetic, ledger-cohort",
+      "impact": "The entire raise-or-pivot decision turns on a split that has not been queried, and the query takes roughly one analyst-day.",
+      "fix": "Run the cohort split by acquisition source and by solar vs. non-solar household before any other work.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "partial",
+        "retention",
+        "cohort"
+      ]
+    },
+    {
+      "id": "finding-solar-segment",
+      "title": "The 38% solar-export request is a segment disclosure, not a roadmap item",
+      "statement": "Solar-export tracking accounting for 38% of all feedback indicates that a large share of engaged users are solar households, a customer with prior five-figure energy spend and a live financial reason to monitor export against self-consumption.",
+      "severity": "P1",
+      "basis": "derived",
+      "location": "evidence audit, row-solar",
+      "impact": "Reframes the strategic question from consumer-versus-B2B to undifferentiated-consumer versus solar-household-consumer, and is the strongest available argument for a narrowed thesis.",
+      "fix": "Measure retention and churn for the solar sub-cohort before building the feature, and price-test a solar tier.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "strong",
+        "segmentation"
+      ]
+    },
+    {
+      "id": "finding-mrr-decay",
+      "title": "The paid business is sub-scale and shrinking-capable",
+      "statement": "MRR is $1,260 (210 x $6, ~$15.1k ARR), and at 9% monthly churn with no new paid acquisition it decays to roughly $590 within eight months.",
+      "severity": "P1",
+      "basis": "derived",
+      "location": "arithmetic, figure-band",
+      "impact": "Revenue cannot fund the runway extension that either strategic path would require.",
+      "fix": "Treat revenue as evidence of willingness to pay, not as a financing option; plan the six-week evidence window against the eight-month runway.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "derived",
+        "runway"
+      ]
+    },
+    {
+      "id": "finding-nps-survivorship",
+      "title": "NPS 31 is survivor satisfaction and cannot arbitrate the decision",
+      "statement": "140 responses against 4,100 installs is a 3.4% response rate from a self-selected pool of users who stayed, so the score measures survivors and does not predict retention or willingness to pay.",
+      "severity": "P2",
+      "basis": "derived",
+      "location": "evidence audit, row-nps",
+      "impact": "Using NPS 31 as counter-evidence against 9% churn would misread the dataset in the company's favor.",
+      "fix": "Exit-survey every cancellation from the last 60 days with one open-text question.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "assumption",
+        "survivorship-bias"
+      ]
+    },
+    {
+      "id": "finding-utility-rating-misread",
+      "title": "Utility app ratings of 2.1 are not a consumer opening",
+      "statement": "Utility app store ratings largely measure the billing relationship rather than the software, so a 2.1 rating supports the B2B conversation but does not establish a consumer market opening.",
+      "severity": "P2",
+      "basis": "derived",
+      "location": "evidence audit, row-utility-apps",
+      "impact": "The weakest inference in the current thesis; it will not survive diligence as a differentiation argument.",
+      "fix": "Use the 2.1 ratings only as the opener in utility conversations (Test 3), not as consumer-side evidence.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "assumption",
+        "competitive"
+      ]
+    },
+    {
+      "id": "finding-b2b-unevidenced",
+      "title": "The B2B pivot rests on no evidence and a sales cycle longer than the runway",
+      "statement": "There is no pilot, design partner, named budget, or pricing conversation supporting the B2B white-label option, and regulated utility procurement is committee-driven and budget-cycle-bound, plausibly exceeding the eight months of runway available.",
+      "severity": "P0",
+      "basis": "derived",
+      "location": "the call; test-b2b",
+      "impact": "B2B is fundable as a story but cannot function as a revenue rescue inside the current runway, so pivoting on the current evidence would be a strictly worse-supported bet than the existing path.",
+      "fix": "Falsify cheaply: seek one written pilot intent naming a budget line and a date from a municipal utility or rural co-op within three weeks.",
+      "artifact": "lumen-pmf-review",
+      "status": "open",
+      "tags": [
+        "assumption",
+        "b2b",
+        "pivot"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "assumption-organic-demand",
+      "statement": "Organic demand for Lumen exists independent of the Reddit post.",
+      "basis": "Only the ~1,189 non-viral installs over 90 days speak to this, and no paid acquisition has ever been run to price a marginal user.",
+      "impact_if_wrong": "There is no consumer business at any price; the raise fails at the first cohort question in diligence.",
+      "status": "open",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "assumption",
+        "A1",
+        "acquisition"
+      ]
+    },
+    {
+      "id": "assumption-distribution-not-value",
+      "statement": "The 22% D30 and 9% monthly churn reflect a distribution problem rather than a value problem.",
+      "basis": "Assumed by the framing of the raise-or-pivot question; the same numbers are equally consistent with a curiosity-then-abandonment product.",
+      "impact_if_wrong": "Both strategic options fail for the same underlying reason, and a B2B white-label sells utilities the same abandonment at wholesale.",
+      "status": "open",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "assumption",
+        "A2",
+        "retention"
+      ]
+    },
+    {
+      "id": "assumption-data-supply",
+      "statement": "Lumen's hardware-free data supply is durable and not controlled by the prospective B2B buyer.",
+      "basis": "The brief does not state how consumption data is obtained without hardware; if it comes from utility accounts or smart-meter interval feeds, the counterparty in the pivot controls the input.",
+      "impact_if_wrong": "The moat argument disappears in diligence and the white-label pitch becomes an offer to sell a utility something built from data it already owns.",
+      "status": "open",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "assumption",
+        "A3",
+        "moat",
+        "unverified"
+      ]
+    },
+    {
+      "id": "assumption-flat-hazard",
+      "statement": "Subscriber life is 11.1 months, implied by treating 9% monthly churn as a constant hazard rate.",
+      "basis": "Arithmetic on the single blended churn figure supplied; real churn curves are usually front-loaded.",
+      "impact_if_wrong": "True LTV is higher than the ~$57 modeled, and the CAC ceiling rises accordingly; the direction of this error favors the company.",
+      "status": "open",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "derived",
+        "unit-economics"
+      ]
+    },
+    {
+      "id": "assumption-store-fee",
+      "statement": "App store commission is the 15% small-business tier.",
+      "basis": "Not stated in the brief; assumed to compute net LTV.",
+      "impact_if_wrong": "At 30% every CAC ceiling in the deliverable drops by roughly a sixth, to about $16 at the $6 price point.",
+      "status": "open",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "assumption",
+        "unit-economics"
+      ]
+    },
+    {
+      "id": "assumption-solar-cohort-differs",
+      "statement": "Solar households retain and convert materially better than the general install base.",
+      "basis": "Inferred from solar-export tracking being 38% of all feedback; never measured behaviorally.",
+      "impact_if_wrong": "The narrowed thesis has no segment behind it, the 38% is noise from a vocal minority, and the week-6 decision falls to the stop-or-sell branch.",
+      "status": "open",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "assumption",
+        "segmentation"
+      ]
+    }
+  ],
+  "gates": [
+    {
+      "id": "gate-strategy",
+      "title": "Which signal would actually change your mind?",
+      "kind": "uncertainty",
+      "description": "Thresholds proposed by this review (32% organic D30, 6% solar-cohort monthly churn, $19 and $57 CAC ceilings, one written pilot intent) are the reviewer's, not the founders'. The founders must pre-register their own kill thresholds in writing before the Test 1 query is run, or the result will be rationalized after the fact.",
+      "blocking": false,
+      "state": "open",
+      "questions": [
+        {
+          "id": "kill-threshold",
+          "label": "Name, in writing and before the query runs, the organic-cohort D30 and solar-cohort churn figures you would accept as a kill signal.",
+          "type": "textarea",
+          "required": true
+        }
+      ]
+    },
+    {
+      "id": "gate-conflict",
+      "title": "Stated pain conflicts with observed behavior",
+      "kind": "conflict",
+      "description": "Stated-pain reading: 38% feedback convergence on solar-export is unusually high consensus and retention is depressed because the product is incomplete for the users who care most. Behavioral reading: 22% D30 and 9% churn are what the whole population did, while 38% is what a vocal minority said. Falsification test: split retention and churn by solar vs. non-solar household before the feature ships. A second conflict, NPS 31 against 9% churn, is a survivorship artifact and is falsified by exit-surveying the last 60 days of cancellations.",
+      "blocking": false,
+      "state": "open",
+      "questions": [
+        {
+          "id": "build-anyway",
+          "label": "If the solar cohort retains no better than everyone else, do you still build solar-export tracking?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "options": [
+            {
+              "value": "no",
+              "label": "No — the cohort split is a real test and we abide by it"
+            },
+            {
+              "value": "yes",
+              "label": "Yes — we would build it regardless",
+              "description": "If so, the cohort split is not functioning as a test and should not be presented as evidence."
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "id": "gate-direction",
+      "title": "Continue, narrow, or reposition?",
+      "kind": "tradeoff",
+      "description": "Raising, pivoting, and cutting are all one-way doors on an eight-month clock. The review recommends narrowing, but the decision depends on context the review does not hold: investor conversations already in flight, what the founders want to spend the next five years doing, and the personal cost of a wind-down.",
+      "blocking": false,
+      "state": "open",
+      "questions": [
+        {
+          "id": "direction",
+          "label": "Which direction do we build the plan around?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "narrow",
+          "options": [
+            {
+              "value": "continue",
+              "label": "Continue — raise on the consumer-subscription thesis as it stands"
+            },
+            {
+              "value": "narrow",
+              "label": "Narrow — run the six-week tests, then raise on the solar-household thesis (Recommended)",
+              "description": "The review's recommendation; leaves 6+ months of runway and keeps the stop-or-sell branch open."
+            },
+            {
+              "value": "reposition",
+              "label": "Reposition — commit to the B2B white-label play for utilities"
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "recommendations": [
+    {
+      "id": "rec-narrow",
+      "text": "Narrow rather than raise or pivot: the evidence does not fund a consumer-subscription seed today and funds a B2B pivot even less, but it does fund six weeks of cohort and pricing work that could produce a fundable solar-household thesis.",
+      "state": "awaiting-decision",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "primary"
+      ]
+    },
+    {
+      "id": "rec-test-cohort",
+      "text": "Week 1, one analyst-day: split D30 free retention and paid churn by acquisition source (Reddit vs. organic) and by solar vs. non-solar household, and exit-survey every cancellation from the last 60 days. Pre-register thresholds first.",
+      "state": "awaiting-decision",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "validation-action",
+        "highest-leverage"
+      ]
+    },
+    {
+      "id": "rec-test-cac",
+      "text": "Weeks 2-5, $3-5k: buy an order-of-magnitude CAC number against the solar segment specifically, and run a parallel price test of the $6 tier against a $15-20 solar tier. Pass bar is CAC under the ~$19 ceiling at $6 or the ~$57 ceiling at $18.",
+      "state": "awaiting-decision",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "validation-action",
+        "unit-economics"
+      ]
+    },
+    {
+      "id": "rec-test-b2b",
+      "text": "Weeks 2-4, founder time only: take five conversations with municipal utility and rural co-op product owners. Pass condition is a written pilot intent naming a budget line and a date within three weeks; anything less falsifies the pivot under this runway.",
+      "state": "awaiting-decision",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "validation-action",
+        "falsification"
+      ]
+    },
+    {
+      "id": "rec-preserve-optionality",
+      "text": "If at week 6 the cohorts are flat and no utility will sign a pilot intent, take neither strategic option: cut to what $1,260 MRR sustains or pursue an acquirer while roughly 6.5 months of runway still provides negotiating leverage.",
+      "state": "awaiting-decision",
+      "artifact": "lumen-pmf-review",
+      "tags": [
+        "contingency",
+        "runway"
+      ]
+    }
+  ],
+  "contract": {
+    "declared_by": "run",
+    "items": [
+      {
+        "item": "PMF/FMF risk summary",
+        "held": true,
+        "note": "Delivered in lumen-pmf-review.html: the call, evidence audit, derived arithmetic, three load-bearing assumptions."
+      },
+      {
+        "item": "Evidence quality labels (strong, partial, assumption)",
+        "held": true,
+        "note": "All nine supplied inputs graded in the evidence audit table against the commercial claim each is asked to support."
+      },
+      {
+        "item": "Next 1-3 validation actions",
+        "held": true,
+        "note": "Three concurrent tests scoped to six weeks, each with a pre-registered pass or kill threshold."
+      },
+      {
+        "item": "Personal perspective checkpoint: strategy gate",
+        "held": true,
+        "note": "gate-strategy, open, non-blocking; also raised in chat."
+      },
+      {
+        "item": "Personal perspective checkpoint: conflict gate",
+        "held": true,
+        "note": "gate-conflict; both readings presented with one falsification test per conflict."
+      },
+      {
+        "item": "Personal perspective checkpoint: irreversible recommendation",
+        "held": true,
+        "note": "gate-direction, open, non-blocking; the review recommends but does not commit the founders to a one-way door."
+      },
+      {
+        "item": "No fabricated market stats, competitive intel, or interview quotes",
+        "held": true,
+        "note": "Every figure derives arithmetically from the nine supplied inputs. Claims about utility procurement and incumbent app ratings are labeled structural argument, not cited statistics."
+      },
+      {
+        "item": "Observed evidence separated from assumptions",
+        "held": true,
+        "note": "Findings carry a basis of reported or derived; six assumptions are recorded separately with impact-if-wrong."
+      },
+      {
+        "item": "Role boundary: no UX heuristic audit performed",
+        "held": true,
+        "note": "Interaction-level critique is out of scope and routes to /ux-review; the deliverable notes the product itself was not inspected."
+      }
+    ]
+  },
+  "limits": [
+    "Every figure derives from the nine inputs supplied in the brief. No external market data, competitor financials, category retention benchmarks, or utility procurement timelines were sourced or cited.",
+    "The product, onboarding flow, and paywall were not inspected. The 5.1% install-to-paid conversion and 22% D30 could be substantially explained by execution issues invisible to this review.",
+    "The cohort splits underlying every branch of the week-6 decision have not been queried; the load-bearing evidence does not yet exist.",
+    "How Lumen obtains consumption data without hardware is unstated in the brief, so moat durability and B2B negotiating leverage could not be assessed.",
+    "Subscriber life of 11.1 months assumes a constant hazard rate; the actual churn curve was not available.",
+    "App store commission assumed at the 15% small-business tier; at 30% every CAC ceiling drops by roughly a sixth.",
+    "NPS respondent composition (payers vs. free users, and when surveyed) was not available, so the degree of survivorship bias in the score could not be quantified.",
+    "No churn reasons exist in the dataset; nobody has surveyed users who cancelled.",
+    "The reviewer's proposed thresholds are judgment calls awaiting the founders' own pre-registered figures at gate-strategy."
+  ]
+}

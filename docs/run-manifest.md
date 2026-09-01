@@ -56,7 +56,7 @@ to "gated", leave the gate "open", and do not write the deliverable. List what
 you could not verify under "limits".
 ```
 
-Port cost for v0 was one frontmatter block per workflow. v0.1 adds this second block. Contract fidelity survived it on the first live test: the 2026-09-01 pk-ux-review run emitted a schema-valid manifest, ran the validator itself before finishing, and kept every output-contract item intact. The emitted manifest ships as `schema/examples/2026-09-01-ux-review-freshfold-pause.json`, byte-identical to the workspace original except for an added `run.log` join hint.
+Port cost for v0 was one frontmatter block per workflow. v0.1 adds this second block. Contract fidelity survived it in live tests across all four workflow ports on 2026-09-01: every run emitted a schema-valid manifest on its first attempt and ran the validator itself before finishing, and the research-brief run held at its uncertainty gate and emitted a `status: gated` manifest with no deliverable — the blocked-work path works end to end. One run also recorded a decision it found already made in the request (`channel: other`) and asked only the genuinely open questions, unprompted by this block. The four emitted manifests ship in `schema/examples/`, unmodified from the workspace originals except for an added `run.log` join hint.
 
 ## Validation
 

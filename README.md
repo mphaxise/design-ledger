@@ -41,7 +41,7 @@ Chat is an input method. The home surface for design practice is the ledger: a p
 
 ## Status
 
-v0.1, shipped 2026-09-01. Real: the board, the four workflow ports, the substrate evidence above, the run-manifest schema with six backfilled genesis manifests, a board that renders from manifests, and live emission — a pk-ux-review run on 2026-09-01 wrote a schema-valid manifest and validated it itself before finishing (`schema/examples/2026-09-01-ux-review-freshfold-pause.json`). Planned: a write path from board to substrate, the graduation loop, more substrates. `ROADMAP.md` carries the sequence and is explicit about which is which.
+v0.1, shipped 2026-09-01. Real: the board, the four workflow ports, the substrate evidence above, the run-manifest schema with six backfilled genesis manifests, a board that renders from manifests, and live emission proven across all four workflow ports on 2026-09-01 — every run emitted a schema-valid manifest on its first attempt, and the research-brief run held at its gate and emitted a gated manifest with no deliverable (the four emitted manifests are in `schema/examples/`). Planned: a write path from board to substrate, the graduation loop, more substrates. `ROADMAP.md` carries the sequence and is explicit about which is which.
 
 ## License
 
