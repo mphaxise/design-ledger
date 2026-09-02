@@ -96,7 +96,8 @@ def tiles(d):
             distinct[g['gate_id']] = g['state']
     gates = list(distinct.values())
     answered = sum(1 for s in gates if s == 'answered')
-    held = sum(1 for c in d['contract_checks'] if c.get('held'))
+    held = sum(1 for c in d['contract_checks']
+               if c.get('status', 'held' if c.get('held') else 'broke') == 'held')
     cells = [
         (t['runs'], 'runs'),
         (f"${t['cost']}", 'model spend'),
@@ -255,8 +256,16 @@ def main():
     daemon_line = (f'daemon {esc(daemon["version"])} live' if daemon['ok']
                    else 'daemon offline — log evidence only')
     honesty = ''.join(f'<p>{esc(h)}</p>' for h in d['honesty'])
+
+    def check_label(c):
+        st = c.get('status', 'held' if c.get('held') else 'broke')
+        if st == 'held':
+            return 'held ✓'
+        if st == 'gated-partial':
+            return f'{c.get("held_n")}/{c.get("total")} held · rest withheld at the gate'
+        return 'broke ✗'
     checks = ''.join(
-        f'<span class="chip">{esc(c["run"])} · {"held ✓" if c.get("held") else "broke ✗"}'
+        f'<span class="chip">{esc(c["run"])} · {check_label(c)}'
         f'{" · " + esc(c["declared_by"]) if c.get("declared_by") else ""}</span>'
         for c in d['contract_checks'])
     page = f"""<!doctype html><html lang="en"><head><meta charset="utf-8">

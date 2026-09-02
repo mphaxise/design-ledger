@@ -232,10 +232,21 @@ def main():
                          'source': rec.get('artifact'), 'provenance': prov})
         c = m.get('contract')
         if c:
-            held_all = all(i.get('held') for i in c.get('items', []))
-            checks.append({'run': rid, 'held': held_all,
-                           'declared_by': c['declared_by'],
-                           'items': c.get('items', [])})
+            items = c.get('items', [])
+            held_n = sum(1 for i in items if i.get('held'))
+            if held_n == len(items):
+                cstatus = 'held'
+            elif m['run']['status'] == 'gated':
+                # A gated run withholds its deliverable by design; the items it
+                # could not meet are withheld, not broken. Reporting that as a
+                # contract failure would mislabel correct behavior.
+                cstatus = 'gated-partial'
+            else:
+                cstatus = 'broke'
+            checks.append({'run': rid, 'status': cstatus,
+                           'held': cstatus != 'broke',
+                           'held_n': held_n, 'total': len(items),
+                           'declared_by': c['declared_by'], 'items': items})
         for lim in m.get('limits', []):
             notes.append(f'{rid}: {lim}')
 
