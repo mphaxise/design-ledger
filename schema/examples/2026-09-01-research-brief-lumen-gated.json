@@ -14,6 +14,7 @@
     "date": "2026-09-01",
     "provenance": "emitted",
     "log": "designer-layer-emission-test-2026-09-01-run-brief.log",
+    "project": "proj-emission-test-2026-09-01-brief",
     "note": "Stopped at the mandatory uncertainty gate. The strategy gate was already answered inside Praneet's brief; the scope-posture choice was not, and it changes which instruments the three-week field window can carry. Deliverable withheld."
   },
   "findings": [

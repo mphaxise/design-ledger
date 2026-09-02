@@ -21,6 +21,35 @@ import sys
 SCHEMA_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)),
                            'run-manifest.schema.json')
 
+# Decision records (docs/write-path.md) are validated with the same subset
+# interpreter. Small enough to live inline; the run-manifest schema file
+# stays the source of truth for the id and date shapes via $defs reuse.
+DECISION_SCHEMA = {
+    'type': 'object',
+    'required': ['record', 'schema_version', 'run', 'gate', 'answer', 'by', 'at'],
+    'properties': {
+        'record': {'const': 'design-ledger/decision-record'},
+        'schema_version': {'const': '0.1'},
+        'run': {'$ref': '#/$defs/id'},
+        'gate': {'$ref': '#/$defs/id'},
+        'answer': {'type': 'string'},
+        'answers': {'type': 'object'},
+        'by': {'type': 'string'},
+        'at': {'$ref': '#/$defs/date'},
+        'via': {'type': 'string'},
+        'channel': {'enum': ['resume-prompt', 'form', 'board', 'other']},
+        'continuation': {
+            'type': 'object',
+            'properties': {
+                'project': {'type': 'string'},
+                'conversation': {'type': 'string'},
+                'posted_at': {'type': 'string'},
+                'state': {'enum': ['posted', 'not-posted', 'failed']},
+            },
+        },
+    },
+}
+
 TYPES = {
     'object': dict, 'array': list, 'string': str,
     'boolean': bool, 'integer': int,
@@ -141,6 +170,9 @@ def validate_file(path, schema):
         m = json.load(open(path, encoding='utf-8'))
     except Exception as e:
         return [f'$: not valid JSON ({e})']
+    if isinstance(m, dict) and m.get('record') == 'design-ledger/decision-record':
+        c.check(DECISION_SCHEMA, m, '$')
+        return c.errors
     c.check(schema, m, '$')
     if isinstance(m, dict):
         consistency(m, lambda p, msg: c.err(p, msg))

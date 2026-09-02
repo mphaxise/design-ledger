@@ -75,6 +75,16 @@ td.num{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:13px}
 .honesty p{margin:6px 0}
 a{color:var(--accent)}
 .foot{margin-top:40px;color:var(--ink-3);font-size:12.5px;font-family:var(--mono)}
+form.decide{margin-top:12px;border-top:1px dashed var(--border);padding-top:10px}
+.q{margin:8px 0}
+.q-label{margin:0 0 4px;font-size:13.5px;font-weight:600}
+label.opt{display:block;font-size:13.5px;color:var(--ink-2);margin:3px 0;cursor:pointer}
+.free{width:100%;box-sizing:border-box;background:var(--bg);color:var(--ink);
+  border:1px solid var(--border);border-radius:6px;padding:6px 8px;font:inherit;font-size:13.5px}
+form.decide button{margin-top:10px;background:var(--accent);color:#fff;border:0;
+  border-radius:6px;padding:8px 14px;font:inherit;font-size:13.5px;cursor:pointer}
+form.decide button:disabled{opacity:.45;cursor:not-allowed}
+.decide-status{min-height:1em}
 """
 
 
@@ -155,24 +165,67 @@ def assumptions_cards(d):
     return f'<div class="cards">{"".join(cards)}</div>'
 
 
+def q_label(q):
+    return q.get('label', '') if isinstance(q, dict) else q
+
+
+def answer_form(g):
+    """Interactive answer form for an open gate, from its emitted questions.
+
+    Inert on a static file open; live under board/serve.py (the JS enables
+    submission only over http). Renders only for manifest gates, whose
+    questions carry structure."""
+    qs = [q for q in g['questions'] if isinstance(q, dict)]
+    if not qs:
+        return ''
+    rows = []
+    for q in qs:
+        qid = esc(q.get('id', ''))
+        rows.append(f'<div class="q" data-qid="{qid}"><p class="q-label">{esc(q.get("label"))}</p>')
+        qtype = q.get('type', 'radio')
+        if q.get('options'):
+            itype = 'checkbox' if qtype == 'checkbox' else 'radio'
+            for o in q['options']:
+                val, lab = esc(o.get('value', '')), esc(o.get('label', ''))
+                dflt = q.get('default')
+                checked = ' checked' if (val == dflt or (isinstance(dflt, list) and o.get('value') in dflt)) else ''
+                rows.append(f'<label class="opt"><input type="{itype}" name="{qid}" value="{val}" data-label="{lab}"{checked}> {lab}</label>')
+        elif qtype == 'textarea':
+            rows.append(f'<textarea rows="2" class="free" name="{qid}"></textarea>')
+        else:
+            rows.append(f'<input type="text" class="free" name="{qid}">')
+        rows.append('</div>')
+    return (f'<form class="decide" data-run="{esc(g["run"])}" data-gate="{esc(g["gate_id"])}">'
+            + ''.join(rows) +
+            '<div class="q"><p class="q-label">Answered by</p>'
+            '<input type="text" class="free" name="__by" placeholder="your name"></div>'
+            '<button type="submit" disabled>Record decision &amp; resume the run</button>'
+            '<p class="meta serve-hint">forms are live only when served: python3 board/serve.py</p>'
+            '<p class="meta decide-status"></p></form>')
+
+
 def gate_cards(d):
     cards = []
     for g in d['gates']:
-        qs = ''.join(f'<li>{esc(q)}</li>' for q in g['questions'])
+        qs = ''.join(f'<li>{esc(q_label(q))}</li>' for q in g['questions'])
+        form = ''
         if g['state'] == 'answered':
+            src = ' · via decision record' if g.get('answered_by') == 'decision-record' else ''
             tail = (f'<p class="answer"><b>Answered:</b> {esc(g.get("answer"))} '
                     f'<span class="meta">— {esc(g.get("by"))}, {esc(g.get("on"))}, '
-                    f'{esc(g.get("via"))}</span></p>')
+                    f'{esc(g.get("via"))}{src}</span></p>')
         elif g.get('superseded'):
             tail = '<p class="answer">◌ open at emission — the resumed run carries the answer</p>'
-        elif g.get('blocking', True):
-            tail = '<p class="answer status open">◌ open — work blocked on a human decision</p>'
         else:
-            tail = '<p class="answer status open">◌ open checkpoint — deliverable exists, next step awaits a human</p>'
+            if g.get('blocking', True):
+                tail = '<p class="answer status open">◌ open — work blocked on a human decision</p>'
+            else:
+                tail = '<p class="answer status open">◌ open checkpoint — deliverable exists, next step awaits a human</p>'
+            form = answer_form(g)
         kind = f' · {esc(g["kind"])}' if g.get('kind') else ''
         cards.append(
             f'<div class="card {g["state"]}"><h3>{esc(g["title"])}</h3>'
-            f'<div class="from">gate{kind} · {esc(g["run"])}</div><ul>{qs}</ul>{tail}</div>')
+            f'<div class="from">gate{kind} · {esc(g["run"])}</div><ul>{qs}</ul>{tail}{form}</div>')
     for rec in d['recommendations']:
         src = f' · {esc(rec["source"])}' if rec.get('source') else ''
         cards.append(
@@ -223,7 +276,49 @@ the transcript is upstream, this is the state.</p>
 <h2>Evidence label tallies</h2>{tally_chips(d)}
 <h2>What this board cannot see yet</h2><div class="honesty">{honesty}</div>
 <p class="foot">design-ledger · board v0.1 · data: {esc(a.data)}</p>
-</div></body></html>"""
+</div>
+<script>
+(function () {{
+  var served = location.protocol === 'http:' || location.protocol === 'https:';
+  document.querySelectorAll('form.decide').forEach(function (f) {{
+    var btn = f.querySelector('button'), hint = f.querySelector('.serve-hint'),
+        status = f.querySelector('.decide-status');
+    if (served) {{ btn.disabled = false; hint.hidden = true; }}
+    f.addEventListener('submit', function (ev) {{
+      ev.preventDefault();
+      var answers = {{}}, parts = [];
+      f.querySelectorAll('.q').forEach(function (q) {{
+        var qid = q.dataset.qid; if (!qid) return;
+        var picked = q.querySelectorAll('input:checked');
+        if (picked.length) {{
+          var vals = [], labs = [];
+          picked.forEach(function (i) {{ vals.push(i.value); labs.push(i.dataset.label || i.value); }});
+          answers[qid] = vals.length > 1 ? vals : vals[0];
+          parts.push(labs.join(', '));
+        }} else {{
+          var free = q.querySelector('.free');
+          if (free && free.value.trim()) {{ answers[qid] = free.value.trim(); parts.push(free.value.trim()); }}
+        }}
+      }});
+      var by = (f.querySelector('[name="__by"]').value || '').trim();
+      if (!by) {{ status.textContent = 'Name required — the record stores who answered.'; return; }}
+      if (!parts.length) {{ status.textContent = 'Pick or write an answer first.'; return; }}
+      btn.disabled = true; status.textContent = 'Recording decision and posting the continuation…';
+      fetch('/decide', {{ method: 'POST', headers: {{'Content-Type': 'application/json'}},
+        body: JSON.stringify({{ run: f.dataset.run, gate: f.dataset.gate,
+          answer: parts.join(' · '), answers: answers, by: by }}) }})
+        .then(function (r) {{ return r.json().then(function (j) {{ return {{ok: r.ok, j: j}}; }}); }})
+        .then(function (res) {{
+          status.textContent = res.j.message || (res.ok ? 'Recorded.' : 'Refused.');
+          if (res.ok && res.j.reload) setTimeout(function () {{ location.reload(); }}, 1500);
+          else btn.disabled = false;
+        }})
+        .catch(function (e) {{ status.textContent = 'Failed: ' + e; btn.disabled = false; }});
+    }});
+  }});
+}})();
+</script>
+</body></html>"""
     open(a.out, 'w').write(page)
     print('WROTE', a.out, len(page), 'bytes')
 

@@ -25,8 +25,15 @@ The board renders runs as objects: status, cost, artifacts, findings, assumption
 python3 board/extract.py --logs-dir <dir-with-sse-logs> \
   --artifacts-dir <dir-with-run-artifacts> \
   --manifests-dir schema/examples \
+  --decisions-dir board/decisions \
   --out board/out/data.json
 python3 board/build_board.py --data board/out/data.json --out board/out/board.html
+```
+
+To answer gates from the board, serve it instead of opening the file — open gates gain live answer forms, and a submitted answer becomes a decision record, a posted continuation, and a harvested manifest (`docs/write-path.md`):
+
+```
+python3 board/serve.py --manifests-dir schema/examples --logs-dir <dir-with-sse-logs>
 ```
 
 Python 3 standard library only. The daemon flag defaults to `http://127.0.0.1:7457`; the board renders from logs alone when the daemon is offline.
