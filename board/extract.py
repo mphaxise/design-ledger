@@ -178,6 +178,8 @@ def main():
                 'status': m['run']['status'],
                 'provenance': m['run']['provenance'],
                 'resumes': m['run'].get('resumes'),
+                'date': m['run'].get('date'),
+                'limits': m.get('limits', []),
             })
             if m.get('artifacts'):
                 r['artifacts'] = [art['path'] for art in m['artifacts']]
@@ -197,6 +199,7 @@ def main():
             'workflow': m['run']['workflow'], 'mode': m['run'].get('mode', '?'),
             'status': m['run']['status'], 'provenance': m['run']['provenance'],
             'resumes': m['run'].get('resumes'), 'substrate_status': None,
+            'date': m['run'].get('date'), 'limits': m.get('limits', []),
             'artifacts': [art['path'] for art in m.get('artifacts', [])],
             'duration_ms': None, 'out_tokens': None, 'cost': None, 'forms': [],
         })
@@ -247,8 +250,8 @@ def main():
                            'held': cstatus != 'broke',
                            'held_n': held_n, 'total': len(items),
                            'declared_by': c['declared_by'], 'items': items})
-        for lim in m.get('limits', []):
-            notes.append(f'{rid}: {lim}')
+        # Per-run limits travel on the run row and render inside its card;
+        # the board-level notes keep only what belongs to no single run.
 
     # Human decision records answer open gates without touching manifests.
     # A manifest that already records the gate answered wins; a disagreement
