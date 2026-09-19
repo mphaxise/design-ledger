@@ -3,10 +3,17 @@
   "$id": "https://raw.githubusercontent.com/mphaxise/design-ledger/main/schema/git-adapter.schema.json",
   "title": "design-ledger Git/Codex adapter v0.4",
   "type": "object",
-  "required": ["adapter", "schema_version", "repository", "risk_rules", "checks"],
+  "required": ["adapter", "schema_version", "project", "repository", "risk_rules", "checks"],
   "properties": {
     "adapter": { "const": "design-ledger/git-codex" },
     "schema_version": { "const": "0.4" },
+    "project": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }
+      }
+    },
     "repository": {
       "type": "object",
       "required": ["id"],

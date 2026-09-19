@@ -44,6 +44,8 @@ The layer runs outside the substrate, on the seam OpenDesign documents for exter
 
 The current v0.4 development path uses Git commits and local Codex/check consumers directly. It has no OpenDesign runtime dependency. A non-blocking post-commit hook appends an immutable event; a separate worker coalesces commit chains, invalidates only affected proof classes, reuses content-addressed evidence, and emits append-only receipts (`docs/git-codex-adapter.md`). The OpenDesign integration remains the earlier reference adapter and evidence history.
 
+The v0.5 Codex plugin adds implicit activation for durable development, asynchronous repository observation, project-scoped multi-repository state, multi-actor evidence, and queryable experience events. `docs/product-model-v0.5.md` defines the user model. `docs/hey-minie-ios-adoption.md` defines the planned one-time Hey Minie onboarding without changing that repository.
+
 ## The base-UI hypothesis
 
 Chat is an input method. The home surface for design practice is the ledger: a project view where findings, assumptions, gates, and decisions carry identity, status, and history, where runs create the objects and humans answer them. The board is the first test of that hypothesis; `docs/concept.md` carries the full argument.

@@ -3,12 +3,13 @@
   "$id": "https://raw.githubusercontent.com/mphaxise/design-ledger/main/schema/commit-event.schema.json",
   "title": "design-ledger commit event v0.4",
   "type": "object",
-  "required": ["record", "schema_version", "id", "observed_at", "repository", "contract_digest", "contract", "source", "changes"],
+  "required": ["record", "schema_version", "id", "observed_at", "project", "repository", "contract_digest", "contract", "source", "changes"],
   "properties": {
     "record": { "const": "design-ledger/commit-event" },
     "schema_version": { "const": "0.4" },
     "id": { "type": "string", "format": "uuid" },
     "observed_at": { "type": "string", "format": "date-time" },
+    "project": { "type": "string" },
     "repository": { "type": "string" },
     "contract_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "contract": { "$ref": "git-adapter.schema.json" },
@@ -42,6 +43,12 @@
         }
       }
     },
-    "changes": { "type": "array", "items": { "type": "string" } }
+    "changes": { "type": "array", "items": { "type": "string" } },
+    "context": {
+      "type": "object",
+      "properties": {
+        "experience_events": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+      }
+    }
   }
 }

@@ -1,6 +1,9 @@
 {
   "adapter": "design-ledger/git-codex",
   "schema_version": "0.4",
+  "project": {
+    "id": "design-ledger"
+  },
   "repository": {
     "id": "design-ledger"
   },
@@ -8,7 +11,7 @@
   "risk_rules": [
     {
       "id": "adapter-runtime",
-      "paths": [".design-ledger/**", "adapters/**", "runtime/**", "schema/**", "tests/**"],
+      "paths": [".design-ledger/**", "adapters/**", "plugins/**", "runtime/**", "schema/**", "tests/**"],
       "risk": "high",
       "invalidates": ["adapter-tests", "adapter-review"]
     },
@@ -34,7 +37,7 @@
       "id": "adapter-tests",
       "proof_class": "adapter-tests",
       "kind": "command",
-      "inputs": [".design-ledger/**", "adapters/**", "runtime/**", "schema/**", "tests/**"],
+      "inputs": [".design-ledger/**", "adapters/**", "plugins/**", "runtime/**", "schema/**", "tests/**"],
       "command": ["python3", "-m", "unittest", "discover", "-s", "tests", "-v"],
       "timeout_seconds": 120,
       "failure_severity": "P1",
@@ -44,7 +47,7 @@
       "id": "adapter-review",
       "proof_class": "adapter-review",
       "kind": "codex",
-      "inputs": [".design-ledger/**", "adapters/**", "runtime/**", "schema/**", "tests/**"],
+      "inputs": [".design-ledger/**", "adapters/**", "plugins/**", "runtime/**", "schema/**", "tests/**"],
       "failure_severity": "P1",
       "required_at": ["pr-readiness", "merge", "release"]
     },

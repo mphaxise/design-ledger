@@ -1,5 +1,6 @@
 import concurrent.futures
 import json
+import os
 import pathlib
 import subprocess
 import sys
@@ -31,6 +32,7 @@ class GitCodexAdapterTests(unittest.TestCase):
         self.contract = {
             "adapter": "design-ledger/git-codex",
             "schema_version": "0.4",
+            "project": {"id": "fixture-product"},
             "repository": {"id": "fixture"},
             "risk_rules": [
                 {"id": "ui", "paths": ["ui/**"], "risk": "high", "invalidates": ["ui"]},
@@ -72,7 +74,7 @@ class GitCodexAdapterTests(unittest.TestCase):
     def test_concurrent_ingest_preserves_every_event(self):
         with concurrent.futures.ThreadPoolExecutor(max_workers=12) as pool:
             events = list(pool.map(lambda _: self.ingest(), range(24)))
-        paths = adapter.state_paths(self.repo.resolve(), self.state, "fixture")
+        paths = adapter.state_paths(self.repo.resolve(), self.state, "fixture", "fixture-product")
         stored = adapter.json_records(paths["events"], adapter.RECORD_EVENT)
         self.assertEqual(24, len(stored))
         self.assertEqual(24, len({event["id"] for event in events}))
@@ -96,6 +98,37 @@ class GitCodexAdapterTests(unittest.TestCase):
         self.assertEqual(2, len(receipt["source"]["events"]))
         self.assertEqual(["docs/readme.md", "ui/view.txt"], receipt["changes"])
         self.assertEqual(["baseline", "docs", "ui"], receipt["classification"]["rules"])
+
+    def test_observe_is_idempotent_for_an_already_processed_commit(self):
+        first_event, first_receipts = adapter.observe(
+            self.repo, self.contract, self.state
+        )
+        second_event, second_receipts = adapter.observe(
+            self.repo, self.contract, self.state
+        )
+        self.assertIsNotNone(first_event)
+        self.assertEqual(1, len(first_receipts))
+        self.assertIsNone(second_event)
+        self.assertEqual([], second_receipts)
+
+    def test_plugin_hook_observes_adapter_enabled_repository(self):
+        contract_dir = self.repo / ".design-ledger"
+        contract_dir.mkdir()
+        (contract_dir / "adapter.json").write_text(
+            json.dumps(self.contract), encoding="utf-8"
+        )
+        env = os.environ.copy()
+        env["DESIGN_LEDGER_RUNTIME"] = str(ROOT / "runtime" / "git_codex_adapter.py")
+        env["DESIGN_LEDGER_STATE_ROOT"] = str(self.state)
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "plugins" / "design-ledger" / "scripts" / "ambient.py")],
+            input=json.dumps({"cwd": str(self.repo)}), text=True,
+            capture_output=True, env=env, check=False,
+        )
+        self.assertEqual(0, result.returncode)
+        paths = adapter.paths_for_contract(self.repo.resolve(), self.state, self.contract)
+        self.assertEqual(1, len(adapter.json_records(paths["events"], adapter.RECORD_EVENT)))
+        self.assertEqual(1, len(adapter.json_records(paths["receipts"], adapter.RECORD_RECEIPT)))
 
     def test_unchanged_inputs_reuse_accepted_result(self):
         self.ingest()
@@ -196,12 +229,34 @@ class GitCodexAdapterTests(unittest.TestCase):
         result, code = adapter.checkpoint(self.repo, self.contract, self.state, "pr-readiness")
         self.assertEqual(("Ready", 0), (result["state"], code))
 
+    def test_experience_event_links_to_next_commit_and_remains_queryable(self):
+        _, note = adapter.record_experience(
+            self.repo, self.contract, self.state, "feedback",
+            "The settings flow should preserve the current section after saving.",
+            "Fixture Human", "human", "settings-save"
+        )
+        timeline = adapter.experience_timeline(
+            self.repo, self.contract, self.state, "settings-save"
+        )
+        self.assertEqual([note["id"]], [item["id"] for item in timeline])
+        (self.repo / "ui" / "view.txt").write_text("two\n", encoding="utf-8")
+        self.commit("implement settings feedback")
+        event = self.ingest()
+        self.assertEqual([note["id"]], event["context"]["experience_events"])
+        receipt = adapter.process(self.repo, self.contract, self.state)[0][1]
+        self.assertEqual([note["id"]], receipt["source"]["experience_events"])
+        with self.assertRaises(adapter.AdapterError):
+            adapter.record_experience(
+                self.repo, self.contract, self.state, "decision",
+                "Agent-selected decision", "Fixture Agent", "agent"
+            )
+
     def test_state_root_inside_repository_is_refused(self):
         with self.assertRaises(adapter.AdapterError):
             adapter.state_paths(self.repo.resolve(), self.repo / ".design-ledger-state", "fixture")
 
     def test_json_schemas_and_example_are_well_formed(self):
-        for name in ("git-adapter.schema.json", "commit-event.schema.json", "evidence-receipt.schema.json"):
+        for name in ("git-adapter.schema.json", "commit-event.schema.json", "evidence-receipt.schema.json", "experience-event.schema.json"):
             data = json.loads((ROOT / "schema" / name).read_text(encoding="utf-8"))
             self.assertEqual("object", data["type"])
         example = json.loads(

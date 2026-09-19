@@ -29,7 +29,9 @@ import uuid
 
 RECORD_EVENT = "design-ledger/commit-event"
 RECORD_RECEIPT = "design-ledger/evidence-receipt"
+RECORD_EXPERIENCE = "design-ledger/experience-event"
 SCHEMA_VERSION = "0.4"
+EXPERIENCE_VERSION = "0.5"
 RISK_ORDER = {"low": 0, "medium": 1, "high": 2, "critical": 3}
 
 
@@ -92,6 +94,9 @@ def validate_contract(contract):
     repo_id = (contract.get("repository") or {}).get("id")
     if not isinstance(repo_id, str) or not repo_id or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for c in repo_id):
         errors.append("repository.id must be a non-empty portable slug")
+    project_id = (contract.get("project") or {}).get("id", repo_id)
+    if not isinstance(project_id, str) or not project_id or any(c not in "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789._-" for c in project_id):
+        errors.append("project.id must be a non-empty portable slug")
     check_ids = set()
     for i, item in enumerate(contract.get("checks", [])):
         cid = item.get("id")
@@ -135,23 +140,33 @@ def load_contract(path):
     return validate_contract(load_json(path))
 
 
-def state_paths(repo, state_root, repo_id):
+def state_paths(repo, state_root, repo_id, project_id=None):
     repo = repo.resolve()
     root = pathlib.Path(state_root).expanduser().resolve()
     if root == repo or repo in root.parents:
         raise AdapterError("state root must be outside the product repository")
-    base = root / "repositories" / repo_id
+    project_id = project_id or repo_id
+    project = root / "projects" / project_id
+    base = project / "sources" / repo_id
     paths = {
         "root": root,
+        "project": project,
         "base": base,
+        "experience": project / "experience",
         "events": base / "events",
         "receipts": base / "receipts",
         "logs": base / "logs",
         "locks": base / "locks",
     }
-    for key in ("events", "receipts", "logs", "locks"):
+    for key in ("experience", "events", "receipts", "logs", "locks"):
         paths[key].mkdir(parents=True, exist_ok=True)
     return paths
+
+
+def paths_for_contract(repo, state_root, contract):
+    repo_id = contract["repository"]["id"]
+    project_id = (contract.get("project") or {}).get("id", repo_id)
+    return state_paths(repo, state_root, repo_id, project_id)
 
 
 def append_json(directory, filename, value):
@@ -189,7 +204,7 @@ def changed_paths(repo, commit):
 
 def ingest(repo, contract, state_root, commit="HEAD"):
     repo = resolve_repo(repo)
-    paths = state_paths(repo, state_root, contract["repository"]["id"])
+    paths = paths_for_contract(repo, state_root, contract)
     sha = run_git(repo, "rev-parse", f"{commit}^{{commit}}").stdout.strip()
     parents = run_git(repo, "show", "-s", "--format=%P", sha).stdout.strip().split()
     author_name = run_git(repo, "show", "-s", "--format=%an", sha).stdout.rstrip("\n")
@@ -203,6 +218,7 @@ def ingest(repo, contract, state_root, commit="HEAD"):
         "schema_version": SCHEMA_VERSION,
         "id": event_id,
         "observed_at": now_utc(),
+        "project": (contract.get("project") or {}).get("id", contract["repository"]["id"]),
         "repository": contract["repository"]["id"],
         "contract_digest": digest(contract),
         "contract": contract,
@@ -224,21 +240,99 @@ def ingest(repo, contract, state_root, commit="HEAD"):
         },
         "changes": changed_paths(repo, sha),
     }
+    linked = linked_experience(repo, paths, sha)
+    if linked:
+        event["context"] = {"experience_events": linked}
     filename = f"{sha}--{event_id}.json"
     append_json(paths["events"], filename, event)
     return event
 
 
-def json_records(directory, record_type):
+def json_records(directory, record_type, schema_version=SCHEMA_VERSION):
     records = []
     for path in sorted(directory.glob("*.json")):
         try:
             item = load_json(path)
         except (OSError, json.JSONDecodeError):
             continue
-        if item.get("record") == record_type and item.get("schema_version") == SCHEMA_VERSION:
+        if item.get("record") == record_type and item.get("schema_version") == schema_version:
             records.append((path, item))
     return records
+
+
+def linked_experience(repo, paths, commit):
+    linked = {
+        event_id
+        for _, event in json_records(paths["events"], RECORD_EVENT)
+        for event_id in event.get("context", {}).get("experience_events", [])
+    }
+    out = []
+    for _, event in json_records(paths["experience"], RECORD_EXPERIENCE, EXPERIENCE_VERSION):
+        if event["id"] in linked:
+            continue
+        base = event.get("links", {}).get("base_commit")
+        if base and is_ancestor(repo, base, commit):
+            out.append(event["id"])
+    return sorted(out)
+
+
+def record_experience(repo, contract, state_root, kind, statement, actor, authority,
+                      flow=None, actor_ref=None, task_ref=None, certainty="explicit",
+                      supersedes=None):
+    repo = resolve_repo(repo)
+    paths = paths_for_contract(repo, state_root, contract)
+    if not statement.strip():
+        raise AdapterError("experience statement must not be empty")
+    if kind == "decision" and authority != "human":
+        raise AdapterError("experience decisions require human authority")
+    if certainty == "explicit" and authority != "human" and kind in ("intent", "feedback", "decision"):
+        raise AdapterError(f"explicit {kind} records require human authority")
+    sha = run_git(repo, "rev-parse", "HEAD^{commit}").stdout.strip()
+    event_id = str(uuid.uuid4())
+    event = {
+        "record": RECORD_EXPERIENCE,
+        "schema_version": EXPERIENCE_VERSION,
+        "id": event_id,
+        "created_at": now_utc(),
+        "project": (contract.get("project") or {}).get("id", contract["repository"]["id"]),
+        "repository": contract["repository"]["id"],
+        "kind": kind,
+        "statement": statement,
+        "certainty": certainty,
+        "attribution": attribution([{
+            "id": actor_ref or actor_id(authority, actor),
+            "kind": authority, "display_name": actor, "roles": ["author"],
+        }]),
+        "authority": authority,
+        "links": {
+            "base_commit": sha,
+            "supersedes": list(supersedes or []),
+        },
+    }
+    if flow:
+        event["flow"] = flow
+    if task_ref:
+        event["source"] = {"kind": "codex-task", "reference": task_ref}
+    name = f"{event['created_at'][:10]}--{event_id}.json"
+    path = append_json(paths["experience"], name, event)
+    return path, event
+
+
+def experience_timeline(repo, contract, state_root, flow=None):
+    repo = resolve_repo(repo)
+    paths = paths_for_contract(repo, state_root, contract)
+    events = [item for _, item in json_records(
+        paths["experience"], RECORD_EXPERIENCE, EXPERIENCE_VERSION
+    )]
+    superseded = {
+        event_id for item in events for event_id in item.get("links", {}).get("supersedes", [])
+    }
+    if flow:
+        events = [item for item in events if item.get("flow") == flow]
+    return [
+        {**item, "active": item["id"] not in superseded}
+        for item in sorted(events, key=lambda item: (item["created_at"], item["id"]))
+    ]
 
 
 def is_ancestor(repo, older, newer):
@@ -440,7 +534,7 @@ def receipt_summary(contract, changed, results, risk):
 
 def process(repo, contract, state_root):
     repo = resolve_repo(repo)
-    paths = state_paths(repo, state_root, contract["repository"]["id"])
+    paths = paths_for_contract(repo, state_root, contract)
     lock_path = paths["locks"] / "process.lock"
     receipts = json_records(paths["receipts"], RECORD_RECEIPT)
     consumed = {
@@ -495,11 +589,16 @@ def process(repo, contract, state_root):
                 "schema_version": SCHEMA_VERSION,
                 "id": receipt_id,
                 "created_at": now_utc(),
+                "project": (chain_contract.get("project") or {}).get("id", chain_contract["repository"]["id"]),
                 "repository": chain_contract["repository"]["id"],
                 "contract_digest": latest["contract_digest"],
                 "source": {
                     "commit": commit,
                     "events": sorted(item["id"] for _, item in chain),
+                    "experience_events": sorted({
+                        event_id for _, item in chain
+                        for event_id in item.get("context", {}).get("experience_events", [])
+                    }),
                     "attribution": latest["source"]["attribution"],
                 },
                 "changes": changed,
@@ -518,10 +617,20 @@ def process(repo, contract, state_root):
     return written
 
 
+def observe(repo, contract, state_root, commit="HEAD"):
+    repo = resolve_repo(repo)
+    paths = paths_for_contract(repo, state_root, contract)
+    sha = run_git(repo, "rev-parse", f"{commit}^{{commit}}").stdout.strip()
+    existing = list(paths["events"].glob(f"{sha}--*.json"))
+    event = None if existing else ingest(repo, contract, state_root, sha)
+    written = process(repo, contract, state_root)
+    return event, written
+
+
 def record_evidence(repo, contract, state_root, commit, check_id, status, actor, authority, evidence,
                     actor_ref=None, supersedes=None):
     repo = resolve_repo(repo)
-    paths = state_paths(repo, state_root, contract["repository"]["id"])
+    paths = paths_for_contract(repo, state_root, contract)
     sha = run_git(repo, "rev-parse", f"{commit}^{{commit}}").stdout.strip()
     check = next((item for item in contract.get("checks", []) if item["id"] == check_id), None)
     if not check:
@@ -552,6 +661,7 @@ def record_evidence(repo, contract, state_root, commit, check_id, status, actor,
     receipt = {
         "record": RECORD_RECEIPT, "schema_version": SCHEMA_VERSION,
         "id": receipt_id, "created_at": now_utc(),
+        "project": (contract.get("project") or {}).get("id", contract["repository"]["id"]),
         "repository": contract["repository"]["id"],
         "contract_digest": digest(contract),
         "source": {"commit": sha, "events": []},
@@ -571,7 +681,7 @@ def record_evidence(repo, contract, state_root, commit, check_id, status, actor,
 
 def checkpoint(repo, contract, state_root, gate, commit="HEAD"):
     repo = resolve_repo(repo)
-    paths = state_paths(repo, state_root, contract["repository"]["id"])
+    paths = paths_for_contract(repo, state_root, contract)
     sha = run_git(repo, "rev-parse", f"{commit}^{{commit}}").stdout.strip()
     receipts = [item for _, item in json_records(paths["receipts"], RECORD_RECEIPT)]
     current_receipts = [
@@ -656,6 +766,8 @@ def parser():
     common.add_argument("--state-root", required=True)
     ingest_p = sub.add_parser("ingest", parents=[common])
     ingest_p.add_argument("--commit", default="HEAD")
+    observe_p = sub.add_parser("observe", parents=[common])
+    observe_p.add_argument("--commit", default="HEAD")
     sub.add_parser("process", parents=[common])
     checkpoint_p = sub.add_parser("checkpoint", parents=[common])
     checkpoint_p.add_argument("--gate", required=True)
@@ -669,6 +781,18 @@ def parser():
     record_p.add_argument("--authority", choices=("agent", "human"), required=True)
     record_p.add_argument("--evidence", required=True)
     record_p.add_argument("--supersedes", action="append", default=[])
+    note_p = sub.add_parser("note", parents=[common])
+    note_p.add_argument("--kind", choices=("intent", "feedback", "flow-observation", "decision", "question"), required=True)
+    note_p.add_argument("--statement", required=True)
+    note_p.add_argument("--flow")
+    note_p.add_argument("--actor", required=True)
+    note_p.add_argument("--actor-id")
+    note_p.add_argument("--authority", choices=("agent", "human"), required=True)
+    note_p.add_argument("--certainty", choices=("explicit", "derived"), default="explicit")
+    note_p.add_argument("--task-ref")
+    note_p.add_argument("--supersedes", action="append", default=[])
+    timeline_p = sub.add_parser("experience", parents=[common])
+    timeline_p.add_argument("--flow")
     hook_p = sub.add_parser("print-hook")
     hook_p.add_argument("--adapter", required=True)
     hook_p.add_argument("--state-root", required=True)
@@ -686,6 +810,13 @@ def main(argv=None):
             event = ingest(args.repo, contract, args.state_root, args.commit)
             print(json.dumps({"event": event["id"], "commit": event["source"]["commit"]}))
             return 0
+        if args.command == "observe":
+            event, written = observe(args.repo, contract, args.state_root, args.commit)
+            print(json.dumps({
+                "event": event["id"] if event else None,
+                "receipts": [receipt["id"] for _, receipt in written],
+            }))
+            return 0
         if args.command == "process":
             written = process(args.repo, contract, args.state_root)
             print(json.dumps({"receipts": [receipt["id"] for _, receipt in written]}))
@@ -697,6 +828,19 @@ def main(argv=None):
                 args.actor_id, args.supersedes
             )
             print(json.dumps({"receipt": receipt["id"], "commit": receipt["source"]["commit"]}))
+            return 0
+        if args.command == "note":
+            _, event = record_experience(
+                args.repo, contract, args.state_root, args.kind, args.statement,
+                args.actor, args.authority, args.flow, args.actor_id, args.task_ref,
+                args.certainty, args.supersedes
+            )
+            print(json.dumps({"experience_event": event["id"], "base_commit": event["links"]["base_commit"]}))
+            return 0
+        if args.command == "experience":
+            print(json.dumps(experience_timeline(
+                args.repo, contract, args.state_root, args.flow
+            ), indent=2, ensure_ascii=False))
             return 0
         result, code = checkpoint(args.repo, contract, args.state_root, args.gate, args.commit)
         print(json.dumps(result, indent=2))

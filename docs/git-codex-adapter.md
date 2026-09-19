@@ -27,11 +27,13 @@ The runtime refuses to store operational state inside the product repository.
 The state root contains append-only source events and receipts, plus raw logs and a processing lock:
 
 ```text
-<state-root>/repositories/<repository-id>/
-  events/<commit>--<event-uuid>.json
-  receipts/<commit>--<receipt-uuid>.json
-  logs/<receipt-uuid>--<check-id>.log
-  locks/process.lock
+<state-root>/projects/<project-id>/
+  experience/<date>--<event-uuid>.json
+  sources/<repository-id>/
+    events/<commit>--<event-uuid>.json
+    receipts/<commit>--<receipt-uuid>.json
+    logs/<receipt-uuid>--<check-id>.log
+    locks/process.lock
 ```
 
 Every event and receipt is atomically published under a unique name. Processing records consumed event IDs in a receipt and leaves the source events intact. A crash can therefore be retried without reconstructing lost testimony. Concurrent ingestion never writes a shared current file.

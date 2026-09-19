@@ -3,12 +3,13 @@
   "$id": "https://raw.githubusercontent.com/mphaxise/design-ledger/main/schema/evidence-receipt.schema.json",
   "title": "design-ledger evidence receipt v0.4",
   "type": "object",
-  "required": ["record", "schema_version", "id", "created_at", "repository", "contract_digest", "source", "changes", "classification", "checks", "findings", "summary"],
+  "required": ["record", "schema_version", "id", "created_at", "project", "repository", "contract_digest", "source", "changes", "classification", "checks", "findings", "summary"],
   "properties": {
     "record": { "const": "design-ledger/evidence-receipt" },
     "schema_version": { "const": "0.4" },
     "id": { "type": "string", "format": "uuid" },
     "created_at": { "type": "string", "format": "date-time" },
+    "project": { "type": "string" },
     "repository": { "type": "string" },
     "contract_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
     "supersedes": { "type": "array", "items": { "type": "string", "format": "uuid" } },
@@ -18,6 +19,7 @@
       "properties": {
         "commit": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" },
         "events": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+        "experience_events": { "type": "array", "items": { "type": "string", "format": "uuid" } },
         "attribution": { "type": "object" }
       }
     },

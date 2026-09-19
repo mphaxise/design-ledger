@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mphaxise/design-ledger/main/schema/experience-event.schema.json",
+  "title": "design-ledger experience event v0.5",
+  "type": "object",
+  "required": ["record", "schema_version", "id", "created_at", "project", "repository", "kind", "statement", "certainty", "attribution", "authority", "links"],
+  "properties": {
+    "record": { "const": "design-ledger/experience-event" },
+    "schema_version": { "const": "0.5" },
+    "id": { "type": "string", "format": "uuid" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "project": { "type": "string" },
+    "repository": { "type": "string" },
+    "kind": { "enum": ["intent", "feedback", "flow-observation", "decision", "question"] },
+    "statement": { "type": "string" },
+    "flow": { "type": "string" },
+    "certainty": { "enum": ["explicit", "derived"] },
+    "authority": { "enum": ["human", "agent"] },
+    "attribution": {
+      "type": "object",
+      "required": ["primary_actor", "actors"],
+      "properties": {
+        "primary_actor": { "type": "string" },
+        "actors": { "type": "array", "minItems": 1, "items": { "type": "object" } }
+      }
+    },
+    "source": {
+      "type": "object",
+      "properties": {
+        "kind": { "const": "codex-task" },
+        "reference": { "type": "string" }
+      }
+    },
+    "links": {
+      "type": "object",
+      "required": ["base_commit", "supersedes"],
+      "properties": {
+        "base_commit": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" },
+        "supersedes": { "type": "array", "items": { "type": "string", "format": "uuid" } }
+      }
+    }
+  }
+}

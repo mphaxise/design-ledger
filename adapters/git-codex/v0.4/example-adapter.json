@@ -1,6 +1,9 @@
 {
   "adapter": "design-ledger/git-codex",
   "schema_version": "0.4",
+  "project": {
+    "id": "example-product"
+  },
   "repository": {
     "id": "example-ios-app"
   },
