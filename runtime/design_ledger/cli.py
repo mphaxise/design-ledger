@@ -111,7 +111,8 @@ def main(argv=None):
     args = parser().parse_args(argv)
     try:
         if args.command == "print-hook":
-            print(hook_script(__file__, args.adapter, args.state_root), end="")
+            wrapper = pathlib.Path(__file__).resolve().parents[1] / "git_codex_adapter.py"
+            print(hook_script(wrapper, args.adapter, args.state_root), end="")
             return 0
         contract = load_contract(args.adapter)
         if args.command == "ingest":

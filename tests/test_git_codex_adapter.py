@@ -158,6 +158,30 @@ class GitCodexAdapterTests(unittest.TestCase):
         self.assertEqual(0, help_result.returncode, help_result.stderr)
         self.assertTrue((plugin_home / "hooks" / "hooks.json").is_file())
 
+    def test_print_hook_targets_stable_cli_wrapper(self):
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "runtime" / "git_codex_adapter.py"),
+                "print-hook",
+                "--adapter",
+                str(ROOT / ".design-ledger" / "adapter.json"),
+                "--state-root",
+                str(pathlib.Path(self.tmp.name) / "state"),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        self.assertIn("runtime/git_codex_adapter.py", result.stdout)
+        self.assertNotIn("runtime/design_ledger/cli.py", result.stdout)
+        syntax = subprocess.run(
+            ["sh", "-n"], input=result.stdout, text=True,
+            capture_output=True, check=False,
+        )
+        self.assertEqual(0, syntax.returncode, syntax.stderr)
+
     def test_unchanged_inputs_reuse_accepted_result(self):
         self.ingest()
         baseline = adapter.process(self.repo, self.contract, self.state)[0][1]
