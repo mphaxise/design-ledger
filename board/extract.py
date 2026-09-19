@@ -115,6 +115,28 @@ def load_manifests(mdir, notes):
     return manifests
 
 
+def load_decision_records(ddir, notes):
+    """Human decision records from the write path (docs/write-path.md)."""
+    schema = json.load(open(manifest_validator.SCHEMA_PATH, encoding='utf-8'))
+    records, rejected = [], 0
+    for path in sorted(glob.glob(os.path.join(ddir, '*.json'))):
+        try:
+            r = json.load(open(path, encoding='utf-8'))
+        except Exception:
+            continue
+        if r.get('record') != 'design-ledger/decision-record':
+            continue
+        errors = manifest_validator.validate_file(path, schema)
+        if errors:
+            rejected += 1
+            print(f'REJECTED {os.path.basename(path)}: {errors[0]}', file=sys.stderr)
+            continue
+        records.append(r)
+    if rejected:
+        notes.append(f'{rejected} decision record(s) failed validation and are excluded from this board.')
+    return records
+
+
 def count_markers(path, markers):
     try:
         t = open(path, encoding='utf-8', errors='replace').read().lower()
@@ -128,6 +150,7 @@ def main():
     ap.add_argument('--daemon', default='http://127.0.0.1:7457')
     ap.add_argument('--logs-dir', required=True)
     ap.add_argument('--manifests-dir', default=None)
+    ap.add_argument('--decisions-dir', default=None)
     ap.add_argument('--artifacts-dir', default=None)
     ap.add_argument('--out', required=True)
     a = ap.parse_args()
@@ -135,6 +158,7 @@ def main():
     notes = []
     health = fetch(a.daemon + '/api/health')
     manifests = load_manifests(a.manifests_dir, notes) if a.manifests_dir else []
+    records = load_decision_records(a.decisions_dir, notes) if a.decisions_dir else []
     by_log = {m['run'].get('log'): m for m in manifests if m['run'].get('log')}
 
     # Runs: one row per log, joined to its manifest when one names it.
@@ -154,6 +178,8 @@ def main():
                 'status': m['run']['status'],
                 'provenance': m['run']['provenance'],
                 'resumes': m['run'].get('resumes'),
+                'date': m['run'].get('date'),
+                'limits': m.get('limits', []),
             })
             if m.get('artifacts'):
                 r['artifacts'] = [art['path'] for art in m['artifacts']]
@@ -173,6 +199,7 @@ def main():
             'workflow': m['run']['workflow'], 'mode': m['run'].get('mode', '?'),
             'status': m['run']['status'], 'provenance': m['run']['provenance'],
             'resumes': m['run'].get('resumes'), 'substrate_status': None,
+            'date': m['run'].get('date'), 'limits': m.get('limits', []),
             'artifacts': [art['path'] for art in m.get('artifacts', [])],
             'duration_ms': None, 'out_tokens': None, 'cost': None, 'forms': [],
         })
@@ -192,7 +219,7 @@ def main():
             row = {
                 'gate_id': g['id'], 'title': g['title'], 'kind': g.get('kind'),
                 'blocking': g.get('blocking', True), 'state': g['state'],
-                'questions': [q.get('label', '') for q in g.get('questions', [])],
+                'questions': g.get('questions', []),
                 'run': rid, 'provenance': prov,
             }
             d = decisions_by_id.get(g.get('decision'))
@@ -208,12 +235,44 @@ def main():
                          'source': rec.get('artifact'), 'provenance': prov})
         c = m.get('contract')
         if c:
-            held_all = all(i.get('held') for i in c.get('items', []))
-            checks.append({'run': rid, 'held': held_all,
-                           'declared_by': c['declared_by'],
-                           'items': c.get('items', [])})
-        for lim in m.get('limits', []):
-            notes.append(f'{rid}: {lim}')
+            items = c.get('items', [])
+            held_n = sum(1 for i in items if i.get('held'))
+            if held_n == len(items):
+                cstatus = 'held'
+            elif m['run']['status'] == 'gated':
+                # A gated run withholds its deliverable by design; the items it
+                # could not meet are withheld, not broken. Reporting that as a
+                # contract failure would mislabel correct behavior.
+                cstatus = 'gated-partial'
+            else:
+                cstatus = 'broke'
+            checks.append({'run': rid, 'status': cstatus,
+                           'held': cstatus != 'broke',
+                           'held_n': held_n, 'total': len(items),
+                           'declared_by': c['declared_by'], 'items': items})
+        # Per-run limits travel on the run row and render inside its card;
+        # the board-level notes keep only what belongs to no single run.
+
+    # Human decision records answer open gates without touching manifests.
+    # A manifest that already records the gate answered wins; a disagreement
+    # between the two surfaces in the honesty section rather than hiding.
+    by_run_gate = {(r['run'], r['gate']): r for r in records}
+    for g in gates:
+        rec = by_run_gate.get((g['run'], g['gate_id']))
+        if not rec:
+            continue
+        if g['state'] == 'open':
+            g.update({'state': 'answered', 'answer': rec['answer'],
+                      'by': rec['by'], 'on': rec['at'], 'via': rec.get('via'),
+                      'answered_by': 'decision-record'})
+        elif g.get('answer') and g['answer'] != rec['answer']:
+            notes.append(f"{g['run']} / {g['gate_id']}: the run's manifest and a decision record disagree on the answer; showing the manifest's.")
+    for rec in records:
+        decisions.append({'id': f"record:{rec['run']}--{rec['gate']}",
+                          'gate': rec['gate'], 'answer': rec['answer'],
+                          'by': rec['by'], 'at': rec['at'], 'via': rec.get('via'),
+                          'channel': rec.get('channel', 'board'),
+                          'run': rec['run'], 'provenance': 'decision-record'})
 
     # A gate answered by a resumed run supersedes its open instance from the
     # gated run. Both stay on the board as history; the open one is marked.

@@ -1,47 +1,95 @@
 # design-ledger
 
-A local-first practice layer for designers working with AI agents. It records design work as a ledger of runs, findings, gates, and decisions, keeps human judgment as a named step with an owner, and graduates proven one-off tools into maintained shared capability. Generation stays with the substrates designers already use — OpenDesign, Claude Code, Codex, and their peers. This layer owns the evidence those runs leave behind.
+Design Ledger is a local-first evidence and experience layer for durable product development with Codex. It observes Git commits, classifies changed paths, runs or queues the required checks, preserves human decisions, and reports readiness at delivery checkpoints.
 
-## The gap
+The regular development task remains the working surface. Design Ledger runs in the background and keeps the evidence.
 
-Agent design tooling ships generation. The discipline around it is the missing half: evidence quality labels, judgment gates that stop a run until a human decides, provenance on every claim, and a path that turns a generated one-off into a tool someone maintains. design-ledger builds that half as a thin, open layer over existing substrates.
+## Current architecture
 
-## Proven on day one (2026-08-31)
+A local commit is the durable coordination event. The Codex plugin observes adapter-enabled repositories after shell commands and invokes the runtime asynchronously. The runtime:
 
-Six live runs inside OpenDesign 0.21.1, driven through its daemon API with Claude Code as the engine:
+- Appends a uniquely named commit event.
+- Coalesces rapid linear commit chains.
+- Invalidates only the proof classes affected by changed paths.
+- Reuses accepted evidence when declared inputs have the same content digest.
+- Runs deterministic command checks from an archive of the exact commit.
+- Queues attributed Codex reviews and human gates.
+- Emits an immutable, source-bound receipt.
 
-- Four practice workflows — design-qa, ux-review, pmf-review, research-brief — ran with their contracts fully intact: severity-ranked findings with reproduction paths, evidence labeled `strong` / `partial` / `assumption`, role boundaries respected, every mandatory judgment gate asked.
-- Port cost per workflow: one frontmatter block on an existing SKILL.md contract.
-- One run refused to write its deliverable until a human answered its scope gate, resumed with the answer, and completed the brief. The judgment loop closed across substrate, agent, and a phone.
-- Total model spend for the whole suite: $6.31.
+Ordinary commits continue without waiting. Pre-push, PR readiness, TestFlight, merge, and release tooling can enforce evidence for their exact checkpoint.
 
-The contract checks, gate answers, findings, and assumptions behind these claims ship as backfilled run manifests (`schema/examples/`), validated against the v0.1 schema. Full run logs stay local to the machine that produced them.
+## Experience history
 
-## The Evidence Board (v0.1)
+Design feedback stays in the regular development conversation. Codex can record explicit intent, feedback, questions, flow observations, and decisions as compact experience events. The next implementing commit links those events to source and verification evidence.
 
-The board renders runs as objects: status, cost, artifacts, findings, assumptions, gates with their answer state, standing recommendations, and a section named "What this board cannot see yet." It is a read-only projection generated from run manifests (`docs/run-manifest.md`) joined with the daemon API and run logs; manifests carry the objects, logs carry what the substrate measured.
+Human intent and decisions require human authority. Agent-derived observations retain agent attribution and an explicit evidence grade.
 
+## Collaboration
+
+Humans, agent instances, Git identities, and services remain distinct actors. Evidence policies can require eligible roles, distinct actors, or quorum. Concurrent disagreement stays visible until a later receipt explicitly supersedes the conflict.
+
+## Repository contract
+
+Each maintained repository supplies `.design-ledger/adapter.json`. The contract declares:
+
+- Logical project and repository IDs.
+- Path-based risk and invalidation rules.
+- Command, Codex, and human checks.
+- Evidence required at each delivery checkpoint.
+
+See [the Git/Codex adapter contract](docs/git-codex-adapter.md) and [the product model](docs/product-model-v0.5.md).
+
+## Local state
+
+Raw events, experience history, receipts, logs, locks, and caches stay outside product repositories:
+
+```text
+<design-ledger-home>/
+  projects/
+    <project-id>/
+      experience/
+      sources/
+        <repository-id>/
+          events/
+          receipts/
+          logs/
+          locks/
 ```
-python3 board/extract.py --logs-dir <dir-with-sse-logs> \
-  --artifacts-dir <dir-with-run-artifacts> \
-  --manifests-dir schema/examples \
-  --out board/out/data.json
-python3 board/build_board.py --data board/out/data.json --out board/out/board.html
+
+Product repositories carry their compact adapter contract and any receipts selected for explicit promotion.
+
+## Validation
+
+The runtime uses Python 3 standard library modules. Run the deterministic suite from the repository root:
+
+```sh
+python3 -m unittest discover -s tests -v
 ```
 
-Python 3 standard library only. The daemon flag defaults to `http://127.0.0.1:7457`; the board renders from logs alone when the daemon is offline.
+The suite covers concurrent ingestion, commit coalescing, selective invalidation, evidence reuse, multi-agent conflict handling, human authority, experience history, plugin observation, and local installation synchronization.
 
-## Architecture
+## Installation
 
-The layer runs outside the substrate, on the seam OpenDesign documents for external orchestrators: the daemon HTTP API drives runs, and workspace provenance keeps source authority outside the design tool. Practice contracts travel as SKILL.md files the substrate composes into its agent prompts. The board projects what runs leave behind into objects. Nothing here forks or patches a substrate.
+The local Codex plugin lives under `plugins/design-ledger/`. See [Codex installation](docs/codex-installation.md) for the trust and onboarding boundaries. Existing local installations update through:
 
-## The base-UI hypothesis
+```sh
+python3 scripts/sync_codex_install.py sync --install
+```
 
-Chat is an input method. The home surface for design practice is the ledger: a project view where findings, assumptions, gates, and decisions carry identity, status, and history, where runs create the objects and humans answer them. The board is the first test of that hypothesis; `docs/concept.md` carries the full argument.
+The command synchronizes the modular runtime and plugin source, verifies file identity, and reinstalls `design-ledger@personal`.
 
-## Status
+## Evidence status
 
-v0.1, shipped 2026-09-01. Real: the board, the four workflow ports, the substrate evidence above, the run-manifest schema with six backfilled genesis manifests, a board that renders from manifests, and live emission — a pk-ux-review run on 2026-09-01 wrote a schema-valid manifest and validated it itself before finishing (`schema/examples/2026-09-01-ux-review-freshfold-pause.json`). Planned: a write path from board to substrate, the graduation loop, more substrates. `ROADMAP.md` carries the sequence and is explicit about which is which.
+- v0.1 OpenDesign reference integration shipped on 2026-09-01.
+- v0.4 Git/Codex asynchronous verification passed its dated fixture suite on 2026-09-19.
+- v0.5 ambient Codex, collaboration, and experience-history behavior passed its dated fixture suite and self-hosted checkpoints on 2026-09-19.
+- Hey Minie iOS completed its onboarding baseline at commit `dcfa9310` with a Ready onboarding checkpoint on 2026-09-19.
+
+The dated session records live under `board/facts/`. `ROADMAP.md` separates implemented work, active consolidation, and planned control-panel work.
+
+## Historical OpenDesign reference
+
+The original Evidence Board, OpenDesign manifest schema, genesis examples, and write-path experiment remain in `board/`, `schema/examples/`, `docs/run-manifest.md`, and `docs/write-path.md`. They preserve the evidence behind the v0.1 claims while the current board migrates to project events and receipts.
 
 ## License
 

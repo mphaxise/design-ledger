@@ -1,0 +1,30 @@
+{
+  "record": "design-ledger/session-test-record",
+  "schema_version": "0.1",
+  "id": "design-ledger-v05-2026-09-19-01",
+  "date": "2026-09-19",
+  "subject": "Design Ledger ambient Codex and experience-history structure v0.5",
+  "source": {
+    "kind": "local-test-run",
+    "command": "python3 -m unittest discover -s tests -v; quick_validate.py plugins/design-ledger/skills/design-ledger; validate_plugin.py plugins/design-ledger",
+    "base_commit": "00267eb36b57a8eef3c078f1aaed2c5268c20c09"
+  },
+  "result": {
+    "status": "passed",
+    "tests_run": 12,
+    "failures": 0,
+    "errors": 0
+  },
+  "coverage": [
+    "all v0.4 Git and evidence adapter checks remain passing",
+    "human experience feedback links to the next commit and remains queryable by flow",
+    "ambient observation is idempotent for an already processed commit",
+    "the Codex plugin hook observes and verifies an adapter-enabled repository",
+    "the Design Ledger Codex skill and plugin manifests validate"
+  ],
+  "limits": [
+    "The plugin hook was exercised as a local script with fixture hook input; Codex hook trust and new-task loading require the installed plugin.",
+    "Hey Minie onboarding remains a plan and no Hey Minie repository state was changed.",
+    "The legacy cleanup plan does not authorize deletion."
+  ]
+}

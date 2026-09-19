@@ -51,12 +51,17 @@ Before finishing, including when you stop at a gate, write `run-manifest.json`
 in the workspace root following design-ledger schema/run-manifest.schema.json,
 version 0.1. Emit every finding, assumption, gate, decision, and recommendation
 this run produced, using the same ids as the deliverable, and set
-run.provenance to "emitted". If a blocking gate is unanswered, set run.status
-to "gated", leave the gate "open", and do not write the deliverable. List what
-you could not verify under "limits".
+run.provenance to "emitted". Record the basename of the workspace directory as
+run.project. If run-manifest.json already exists from a previous run, rename
+it to run-manifest-<that manifest's run.id>.json before writing yours. If a
+blocking gate is unanswered, set run.status to "gated", leave the gate "open",
+and do not write the deliverable. List what you could not verify under
+"limits".
 ```
 
-Port cost for v0 was one frontmatter block per workflow. v0.1 adds this second block. Contract fidelity survived it on the first live test: the 2026-09-01 pk-ux-review run emitted a schema-valid manifest, ran the validator itself before finishing, and kept every output-contract item intact. The emitted manifest ships as `schema/examples/2026-09-01-ux-review-freshfold-pause.json`, byte-identical to the workspace original except for an added `run.log` join hint.
+The archive rule exists because resume is a fresh agent reading the workspace (`docs/write-path.md`): a resumed run lands in the workspace its gated predecessor wrote, and the predecessor's manifest is testimony to preserve, never a file to overwrite.
+
+Port cost for v0 was one frontmatter block per workflow. v0.1 adds this second block. Contract fidelity survived it in live tests across all four workflow ports on 2026-09-01: every run emitted a schema-valid manifest on its first attempt and ran the validator itself before finishing, and the research-brief run held at its uncertainty gate and emitted a `status: gated` manifest with no deliverable — the blocked-work path works end to end. One run also recorded a decision it found already made in the request (`channel: other`) and asked only the genuinely open questions, unprompted by this block. The four emitted manifests ship in `schema/examples/`, unmodified from the workspace originals except for an added `run.log` join hint.
 
 ## Validation
 
@@ -74,5 +79,5 @@ Shipped 2026-09-01: `extract.py` reads every manifest in `--manifests-dir`, sche
 
 1. **One evidence vocabulary or three.** The day-one runs graded evidence in three vocabularies: `reported / derived / unverified` (design-qa findings), `strong / partial / assumption` (pmf-review evidence rows), `measured / calculated / assumption` (research-brief numbers). v0.1 standardizes findings' basis, keeps the rest in artifacts and `tags`, and defers unification until more runs show which distinctions carry weight.
 2. **Verifying self-declared contract checks.** An emitted manifest's `contract` block is testimony. A checker that reads the deliverable and re-scores the contract items would upgrade it to evidence.
-3. **Decisions after emission.** A decision made from the board (roadmap v0.2) lands after the manifest is written. Whether the board appends to the manifest, writes a sibling decision record, or posts a continuation that emits a new manifest is the first design question of v0.2.
+3. **Decisions after emission.** Resolved by `docs/write-path.md` (2026-09-01): the board writes a sibling decision record and never touches the manifest; the resumed run's own manifest re-records the decision it received, and the board dedupes.
 4. **Multi-select answers.** Question defaults and answers can be lists (observed in the genesis gate's checkbox question). `decision.answers` accepts them; the board rendering for list answers is undesigned.

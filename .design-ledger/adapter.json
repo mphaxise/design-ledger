@@ -1,0 +1,79 @@
+{
+  "adapter": "design-ledger/git-codex",
+  "schema_version": "0.4",
+  "project": {
+    "id": "design-ledger"
+  },
+  "repository": {
+    "id": "design-ledger"
+  },
+  "landing_gate": "pre-push",
+  "risk_rules": [
+    {
+      "id": "adapter-runtime",
+      "paths": [".design-ledger/**", "adapters/**", "plugins/**", "runtime/**", "schema/**", "scripts/**", "tests/**"],
+      "risk": "high",
+      "invalidates": ["adapter-tests", "adapter-review"]
+    },
+    {
+      "id": "evidence-board",
+      "paths": ["board/**"],
+      "risk": "high",
+      "invalidates": ["adapter-tests", "board-ui"]
+    },
+    {
+      "id": "documentation",
+      "paths": ["README.md", "ROADMAP.md", "docs/**"],
+      "risk": "low",
+      "invalidates": ["documentation"]
+    }
+  ],
+  "default_rule": {
+    "risk": "medium",
+    "invalidates": ["adapter-tests"]
+  },
+  "checks": [
+    {
+      "id": "adapter-tests",
+      "proof_class": "adapter-tests",
+      "kind": "command",
+      "inputs": [".design-ledger/**", "adapters/**", "plugins/**", "runtime/**", "schema/**", "scripts/**", "tests/**"],
+      "command": ["python3", "-m", "unittest", "discover", "-s", "tests", "-v"],
+      "timeout_seconds": 120,
+      "failure_severity": "P1",
+      "required_at": ["pre-push", "pr-readiness", "merge", "release"]
+    },
+    {
+      "id": "adapter-review",
+      "proof_class": "adapter-review",
+      "kind": "codex",
+      "inputs": [".design-ledger/**", "adapters/**", "plugins/**", "runtime/**", "schema/**", "scripts/**", "tests/**"],
+      "failure_severity": "P1",
+      "required_at": ["pr-readiness", "merge", "release"]
+    },
+    {
+      "id": "board-ui-review",
+      "proof_class": "board-ui",
+      "kind": "codex",
+      "inputs": ["board/**"],
+      "failure_severity": "P1",
+      "required_at": ["pr-readiness", "merge", "release"]
+    },
+    {
+      "id": "documentation-review",
+      "proof_class": "documentation",
+      "kind": "codex",
+      "inputs": ["README.md", "ROADMAP.md", "docs/**"],
+      "failure_severity": "P2",
+      "required_at": ["pr-readiness", "merge", "release"]
+    },
+    {
+      "id": "release-approval",
+      "proof_class": "release",
+      "kind": "human",
+      "inputs": ["README.md", "ROADMAP.md", "runtime/**", "schema/**", "adapters/**"],
+      "failure_severity": "P0",
+      "required_at": ["release"]
+    }
+  ]
+}

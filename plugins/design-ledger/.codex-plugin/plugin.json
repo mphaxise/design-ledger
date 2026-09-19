@@ -1,0 +1,21 @@
+{
+  "name": "design-ledger",
+  "version": "0.5.1+codex.20260919151839",
+  "description": "Ambient evidence and experience history for durable Codex development.",
+  "author": {
+    "name": "Design Ledger contributors"
+  },
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Design Ledger",
+    "shortDescription": "Evidence for durable Codex development.",
+    "longDescription": "Design Ledger observes durable development, captures experience intent, verifies commits, and reports delivery readiness.",
+    "developerName": "Design Ledger contributors",
+    "category": "Developer Tools",
+    "capabilities": [
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": "Use Design Ledger for this durable development task."
+  }
+}

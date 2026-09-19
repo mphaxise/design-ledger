@@ -1,0 +1,18 @@
+{
+  "description": "Observe adapter-enabled Git repositories after Codex shell commands.",
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"$PLUGIN_ROOT/scripts/ambient.py\"",
+            "async": true,
+            "timeout": 180
+          }
+        ]
+      }
+    ]
+  }
+}

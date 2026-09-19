@@ -1,0 +1,6 @@
+interface:
+  display_name: "Design Ledger"
+  short_description: "Evidence for durable development"
+  default_prompt: "Use $design-ledger for this durable development task."
+policy:
+  allow_implicit_invocation: true

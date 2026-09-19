@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mphaxise/design-ledger/main/schema/evidence-receipt.schema.json",
+  "title": "design-ledger evidence receipt v0.4",
+  "type": "object",
+  "required": ["record", "schema_version", "id", "created_at", "project", "repository", "contract_digest", "source", "changes", "classification", "checks", "findings", "summary"],
+  "properties": {
+    "record": { "const": "design-ledger/evidence-receipt" },
+    "schema_version": { "const": "0.4" },
+    "id": { "type": "string", "format": "uuid" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "project": { "type": "string" },
+    "repository": { "type": "string" },
+    "contract_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+    "supersedes": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+    "source": {
+      "type": "object",
+      "required": ["commit", "events"],
+      "properties": {
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40,64}$" },
+        "events": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+        "experience_events": { "type": "array", "items": { "type": "string", "format": "uuid" } },
+        "attribution": { "type": "object" }
+      }
+    },
+    "changes": { "type": "array", "items": { "type": "string" } },
+    "classification": {
+      "type": "object",
+      "required": ["risk", "rules", "invalidates"],
+      "properties": {
+        "risk": { "enum": ["low", "medium", "high", "critical"] },
+        "rules": { "type": "array", "items": { "type": "string" } },
+        "invalidates": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "proof_class", "kind", "input_digest", "status", "accepted"],
+        "properties": {
+          "id": { "type": "string" },
+          "proof_class": { "type": "string" },
+          "kind": { "enum": ["command", "codex", "human"] },
+          "input_digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+          "status": { "enum": ["passed", "failed", "queued", "reused"] },
+          "accepted": { "type": "boolean" },
+          "exit_code": { "type": ["integer", "null"] },
+          "log": { "type": "string" },
+          "reused_from_receipt": { "type": "string", "format": "uuid" },
+          "reason": { "type": "string" },
+          "evidence": { "type": "string" },
+          "authority": { "enum": ["automatic", "agent", "human"] },
+          "attribution": {
+            "type": "object",
+            "properties": {
+              "primary_actor": { "type": "string" },
+              "actors": { "type": "array", "items": { "type": "object" } }
+            }
+          }
+        }
+      }
+    },
+    "findings": { "type": "array", "items": { "type": "object" } },
+    "summary": {
+      "type": "object",
+      "required": ["state", "risk", "what_changed", "current_evidence", "missing_evidence", "next_action"],
+      "properties": {
+        "state": { "enum": ["Ready", "Blocked"] },
+        "gate": { "enum": ["pre-push", "pr-readiness", "testflight", "merge", "release"] },
+        "risk": { "enum": ["low", "medium", "high", "critical"] },
+        "what_changed": { "type": "array", "items": { "type": "string" } },
+        "current_evidence": { "type": "array", "items": { "type": "string" } },
+        "missing_evidence": { "type": "array", "items": { "type": "string" } },
+        "next_action": { "type": "string" }
+      }
+    }
+  }
+}

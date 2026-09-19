@@ -1,0 +1,604 @@
+{
+  "manifest": "design-ledger/run-manifest",
+  "schema_version": "0.1",
+  "run": {
+    "id": "2026-09-01-design-qa-lumen-link-utility",
+    "workflow": "design-qa",
+    "skill_id": "pk-design-qa",
+    "substrate": {
+      "name": "opendesign"
+    },
+    "engine": "claude-code",
+    "mode": "project",
+    "status": "completed",
+    "date": "2026-09-01",
+    "provenance": "emitted",
+    "log": "designer-layer-emission-test-2026-09-01-run-qa.log",
+    "note": "Design QA of the Lumen link-utility-account flow from a written flow summary, three acceptance criteria, and three measured facts. No build, code, session recording, or ticket text was available. The three perspective-checkpoint questions ride with the delivered report as a non-blocking checkpoint gate; the stop-ship recommendation is held awaiting-decision and was not issued."
+  },
+  "artifacts": [
+    {
+      "id": "report",
+      "path": "lumen-link-utility-design-qa.html",
+      "kind": "report",
+      "title": "Lumen — link utility account · design QA"
+    }
+  ],
+  "findings": [
+    {
+      "id": "F-LOCKOUT",
+      "title": "Utility account lockout from retried rejections",
+      "statement": "Retrying a rejected login can lock the user out of their real utility account, because credential whitespace is not trimmed and the failure names no cause or attempt count.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "step 2 credentials -> step 4 failure -> step 1, repeated",
+      "reproduction": [
+        "Copy a correct utility password in a way that carries a trailing space, the behaviour the support logs already record.",
+        "Tap Link utility, select the provider, paste into the password field, submit.",
+        "Wait through the two-minute connect; the provider rejects the login because the trailing space is sent verbatim.",
+        "Observe the failure: a toast reading 'Something went wrong', no statement that the credential was rejected, no attempt count.",
+        "Repeat from step 2 as a user who believes they mistyped will; nothing discourages it or counts attempts.",
+        "Check the provider website: after its lockout threshold the account is locked and needs a reset on the provider side."
+      ],
+      "impact": "The password was correct; an invisible character in Lumen's input handling turned it into a rejected login, and a message naming no cause turned one rejection into a retry loop. The damage lands outside Lumen, on the account the user pays their power bill on, and recovery runs through the utility's own reset flow for a problem the user will not connect to this app. It is the only failure in the flow the user cannot undo inside the product, and some unknown share of the reported 41% wrong-credential retries are correct credentials the app mangled.",
+      "fix": "Trim leading and trailing whitespace on both fields at the input boundary, strip paired smart quotes, and say so inline rather than correcting silently. Count consecutive rejections per provider account; at the second, stop offering a bare retry, warn about provider lockout, and link to the provider's password reset. Never issue a third automatic attempt.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-1",
+        "AC-2",
+        "irreversible",
+        "external-harm"
+      ]
+    },
+    {
+      "id": "F-CRED-CAPTURE",
+      "title": "Third-party password captured in first-party UI",
+      "statement": "A third-party website password is captured in Lumen's own UI and its handling is disclosed only in a footnote, with no stated retention, use, or revocation.",
+      "severity": "P0",
+      "basis": "derived",
+      "location": "step 2, embedded credentials form",
+      "reproduction": [
+        "Reach step 2 for any provider; the form is Lumen's own chrome, not the provider's domain, with no provider-issued authorization language.",
+        "Read every word available about what happens to the password: one footnote stating credentials are stored encrypted.",
+        "Look for who can decrypt it, how long it is kept, what else it is used for, and how to revoke it; none are present in the flow as specified.",
+        "Complete a link, then look for an unlink or delete-credentials control; none is described in the five steps.",
+        "Compare against the user's other financial connections, which hand off to the provider's domain and return a revocable token."
+      ],
+      "impact": "The user is asked to type a utility password into an app that is not the utility, and can only trust a claim they cannot check; the security-literate segment abandons at the highest-intent moment of onboarding. Against AC-3, a scraping integration must replay the password on every sync, so the secret is recoverable by design: 'not plaintext' is satisfied while Lumen holds a working credential to an account it does not own, with no user-facing way to take it back.",
+      "fix": "Move to provider-side authorization wherever it exists, so Lumen receives a revocable grant and never holds a password; confirm per-provider coverage first. Where credential entry must remain, label it as the fallback, name the provider on the form, replace the footnote with plain retention and use statements, and ship an unlink control that deletes the stored secret and confirms it.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-3",
+        "trust",
+        "consent"
+      ]
+    },
+    {
+      "id": "F-BLIND-WAIT",
+      "title": "Two-minute connect with no progress, cancel, or exit",
+      "statement": "The two-minute connecting state shows no progress, offers no cancel, and gives no safe way to leave or to learn the outcome afterwards.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "step 3, connecting state",
+      "reproduction": [
+        "Submit credentials at step 2 and land on 'Connecting — this can take up to 2 minutes'.",
+        "Watch the full two minutes: no stage label, no elapsed or remaining count, no determinate progress; the screen at 0:10 and 1:50 are identical.",
+        "Look for a cancel or back affordance; there is none, so a password the user realises mid-wait was wrong cannot be corrected.",
+        "Background the app or switch away; nothing states whether the attempt continues and no notification arrives either way.",
+        "Force-quit and reopen; there is no readout of whether the link succeeded, failed, or is still running."
+      ],
+      "impact": "34% of users abandon here, the single largest measured leak in the flow. Two minutes is long enough that a static screen reads as a hang rather than as work, and the interface offers nothing to tell the two apart. With no cancel, a user who realises at 0:30 that the password was wrong can only wait ninety more seconds or kill the app and find out later, both ending in the ambiguity that produces 'did my account link?' tickets. A third of users leaving before any credential is judged caps AC-1 on its own.",
+      "fix": "Show real named stages as they complete (reaching the provider, signing in, finding the meter, pulling history). Add a cancel that abandons cleanly and returns to step 2 with the form intact. Let the attempt continue in the background with a push notification on completion, and make that the recommended path.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-1",
+        "measured-34pct-abandon"
+      ]
+    },
+    {
+      "id": "F-STATE-LOSS",
+      "title": "Failure discards provider selection and names no cause",
+      "statement": "Failure drops the user to step 1, discards the provider selection, and reports every distinct cause as the same transient 'Something went wrong' toast.",
+      "severity": "P0",
+      "basis": "reported",
+      "location": "step 4, failure handling",
+      "reproduction": [
+        "Trigger any failure at step 3: wrong password, provider timeout, MFA challenge, or dropped connection.",
+        "Observe that all four produce the same output, a toast reading 'Something went wrong'.",
+        "Observe the app lands on step 1, the list of 40 providers.",
+        "Note the provider selection is gone; the user re-searches and re-picks through the prefix-only search of F-PREFIX-SEARCH.",
+        "Note the toast is gone before re-selection finishes, so any diagnosis it carried is unrecoverable.",
+        "Attempt to determine whether the cause was credentials or a provider outage; nothing in the interface distinguishes them."
+      ],
+      "impact": "This is the multiplier on every other failure. 41% of link failures are wrong-credential retries, and each retry is charged the full price: re-find the provider among 40, re-enter both fields, re-wait two minutes, receive the same nine words. Without a named cause the user cannot act correctly, so a user whose provider is briefly down changes a password that was never wrong, and a user whose password is wrong retries it unchanged straight into the F-LOCKOUT path. Everyone who gives up becomes a ticket, because after the toast the product has no other answer.",
+      "fix": "Return to step 2 with provider and username preserved and the password field focused and cleared. Replace the toast with a persistent in-form message naming cause and next action in at least four classes: credentials rejected, additional verification needed, provider unreachable, connection lost. Give provider-side classes a retry that does not spend a login attempt, and route unclassifiable failures to support with the attempt id.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-1",
+        "AC-2",
+        "measured-41pct-retries"
+      ]
+    },
+    {
+      "id": "F-PREFIX-SEARCH",
+      "title": "Prefix-only provider search",
+      "statement": "Prefix-only search hides providers users know by abbreviation, middle word, or regional name, and reports them as not found.",
+      "severity": "P1",
+      "basis": "derived",
+      "location": "step 1, provider list of 40",
+      "reproduction": [
+        "Open step 1 and search the way people name their utility: an initialism, a middle word, or the regional name on the bill.",
+        "Type an abbreviation for a provider whose full name is spelled out in the list; prefix matching returns nothing.",
+        "Type a distinctive middle word such as 'electric', 'energy', or a city name appearing after the first word; prefix matching returns nothing.",
+        "Type the first word of a provider whose list entry begins with an unfamiliar parent-company name; prefix matching returns nothing.",
+        "Observe the empty state claiming the provider was not found while 39 other rows are hidden.",
+        "Scroll the unfiltered list of 40 and pick the nearest-looking name, the workaround this pushes users into."
+      ],
+      "impact": "Search that matches only from the first character fails exactly where users are most confident: they know their utility's name, type it, and are told it does not exist. The honest reading is that Lumen does not support their provider, and some share leave at step 1 having been wrong about that. Those who stay scroll and guess, and a guessed provider is a credential failure indistinguishable from a wrong password, feeding both the 41% retry figure and the F-STATE-LOSS retry loop.",
+      "fix": "Match on any word boundary and on a per-provider alias list of initialisms, former names, and regional brands, with typo tolerance at one or two edits; 40 rows can be ranked client-side. Add ZIP or postcode as a second route proposing providers serving that area, and make the empty state offer that route rather than asserting nothing was found.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-1"
+      ]
+    },
+    {
+      "id": "F-NO-MFA",
+      "title": "No one-time-code step",
+      "statement": "No step accepts a one-time code, so an MFA-protected account can never link and fails as a generic error.",
+      "severity": "P1",
+      "basis": "unverified",
+      "location": "between step 2 and step 3",
+      "reproduction": [
+        "Enable two-factor authentication on a test account at a provider that offers it.",
+        "Run the link flow with correct credentials for that account.",
+        "Observe the flow goes from credentials straight to connecting: no screen, field, or state can accept a code.",
+        "Check the phone or email on the provider account; a code was very likely sent, with nowhere in Lumen to enter it.",
+        "Wait out the two minutes; the attempt resolves as a generic failure indistinguishable from a wrong password.",
+        "Retry; the result is identical every time and each attempt sends another code."
+      ],
+      "impact": "For an affected user this is not a low success rate but zero, and the flow never says so. They are told 'Something went wrong', retry reasonably, and the product spends their attempts against the F-LOCKOUT threshold while mailing codes it cannot receive. The user is also punished for having done the right thing: turning off two-factor on a utility account to satisfy a monitoring app is a bad instruction, and it is the only one this flow implies.",
+      "fix": "Add an interstitial accepting a one-time code, with resend and a clear statement of where the code was sent, and treat 'additional verification required' as its own failure class in the F-STATE-LOSS taxonomy. Where MFA cannot be handled, mark it on the provider row at step 1 before the user types anything.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-1",
+        "assumption-A2"
+      ]
+    },
+    {
+      "id": "F-ZERO-DASH",
+      "title": "Dashboard asserts zero usage for 48 hours",
+      "statement": "The dashboard shows zeros for 48 hours instead of an explicit pending state, asserting a measurement that was never taken.",
+      "severity": "P1",
+      "basis": "derived",
+      "location": "step 5, post-success dashboard",
+      "reproduction": [
+        "Complete a successful link and read the banner 'Data will appear within 48 hours'.",
+        "Look at the dashboard behind it: every metric reads zero.",
+        "Note what a zero asserts in an energy product: not 'we have nothing yet' but 'you used nothing', a false claim about the user's home.",
+        "Dismiss or scroll past the banner; the zeros remain with no context at all.",
+        "Close and reopen the next day and confirm whether the pending state survives; the flow attaches it to a one-time banner, not to the data.",
+        "Look for the timestamp the 48 hours counts from or how much is left; neither is present."
+      ],
+      "impact": "This lands in the two days where the product must prove it works and has nothing to show. A screen of zeros reads as broken, either a silently failed link or an app that cannot read the meter, and the user cannot rule that out; charts drawn at zero make it worse because a flat line at the axis looks like measured nothing rather than absent data. The predictable behaviours are a ticket asking whether the link worked, or relinking, which spends more credential attempts.",
+      "fix": "Never render a zero that was not measured. Put every metric into an explicit pending state carrying the provider name, the link completion time, and the expected window, persisted with the connection rather than in a dismissible banner. Charts show an empty frame labelled as awaiting first sync. Show any earlier available reading, such as the last billed month, so the 48 hours is not a blank product.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-2"
+      ]
+    },
+    {
+      "id": "F-NO-STATUS",
+      "title": "No link-status surface outside the flow",
+      "statement": "After leaving the flow there is no surface showing link status or offering retry, so the only way to check is to start over.",
+      "severity": "P1",
+      "basis": "unverified",
+      "location": "step 3 onward, outside the linear flow",
+      "reproduction": [
+        "Start a link and leave during the two-minute wait: background the app, take a call, or force-quit.",
+        "Reopen Lumen and try to answer one question: is my utility linked?",
+        "Look for a connections or account screen listing providers and their state; none is described in the five steps.",
+        "Note the only defined feedback is a transient toast and a one-time banner, both gone.",
+        "Try the same on a second platform; no sync of link state between the three is described.",
+        "The only remaining way to find out is to start the link again, risking a duplicate connection or another spent login attempt."
+      ],
+      "impact": "The product's answer to 'did it work?' is to make the user repeat the thing they are unsure about, which is the shape of question that becomes a support ticket rather than a self-serve check, from users who did nothing wrong beyond taking a phone call. It also removes the cheapest recovery path: a user who could see 'link failed — provider unreachable, try again' on a settings screen fixes this in one tap.",
+      "fix": "Give the connection a durable record with a visible state (connecting, connected, needs attention, disconnected) reachable from settings and from the dashboard pending state, on all three platforms and synced between them, each state carrying its own action: retry, re-enter credentials, unlink. Add a push notification when a backgrounded attempt resolves.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-2",
+        "assumption-A6"
+      ]
+    },
+    {
+      "id": "F-WRONG-CRED-TYPE",
+      "title": "Credential type is unspecified",
+      "statement": "Nothing tells the user which of the provider's several logins is wanted, so account numbers and app logins are entered into a web-portal form.",
+      "severity": "P2",
+      "basis": "derived",
+      "location": "step 2, credentials form",
+      "reproduction": [
+        "Reach step 2 and read the field labels; they ask for the provider website login in generic terms.",
+        "Consider what a utility customer plausibly holds: a web portal account, an account number from the bill, a separate app login, sometimes a business or landlord portal.",
+        "Note there is no provider-specific hint about which one, no example format, and no link to the provider's login page for comparison.",
+        "Enter an account number in the username field, a reasonable reading for anyone who has never used the web portal.",
+        "Wait two minutes and receive the same generic failure as a wrong password."
+      ],
+      "impact": "Users who have never logged into their utility's website, a large share of anyone paying by autopay or post, supply the wrong credential type entirely and are told only that something went wrong. The correct next action is 'go create a web account first', and the flow never says it. These attempts land in the 41% as wrong-credential retries while being a different problem with a different fix, which means that figure currently hides at least two distinct causes.",
+      "fix": "Make step 2 provider-specific: name the provider, mirror its own field labels, show the portal URL the credentials belong to, and state plainly that this is the website login rather than the account number. Where portal registration is required first, offer that as a labelled path out of the form.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-1"
+      ]
+    },
+    {
+      "id": "F-NO-LONGTAIL",
+      "title": "Dead end for unlisted providers",
+      "statement": "No path exists for a user whose provider is not among the 40, and the gap is neither captured nor acknowledged.",
+      "severity": "P2",
+      "basis": "derived",
+      "location": "step 1, provider list",
+      "reproduction": [
+        "Search step 1 for a provider genuinely not in the list: a municipal utility, a co-op, or a regional supplier.",
+        "Observe the result: nothing found, no alternative offered.",
+        "Look for a 'my provider isn't listed' control, a request form, or any way to signal the gap; none is described.",
+        "Look for any way to use Lumen without a linked utility such as manual entry, bill upload, or a device-only mode; none is offered at this point.",
+        "The only remaining action is to leave the app."
+      ],
+      "impact": "A user who has downloaded an energy app, opened onboarding, and reached the provider list is as committed as they will ever be, and the flow answers with a dead end and no next step; they cannot tell whether their provider is coming and have no reason to return. Because there is no capture, Lumen also loses the ranked signal of which providers to integrate next.",
+      "fix": "Add a persistent 'my provider isn't listed' row to the results and the empty state, capture provider name and ZIP, state honestly that it is not supported yet, and offer notify-me. Where a degraded mode exists such as manual meter or bill entry, offer it here rather than losing the user.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-2",
+        "assumption-A7"
+      ]
+    },
+    {
+      "id": "F-PW-FIELD",
+      "title": "Password field lacks reveal, autofill, and paste feedback",
+      "statement": "The password field offers no reveal, no password-manager association, and no paste validation, which is the mechanism behind the trailing-space reports.",
+      "severity": "P2",
+      "basis": "reported",
+      "location": "step 2, credentials form",
+      "reproduction": [
+        "At step 2, paste a password and try to confirm visually that it arrived intact; there is no reveal control, and a trailing space is invisible even if there were.",
+        "Open the platform password manager and look for the provider's saved credential; because the form is Lumen's own and declares no association with the provider's domain, the manager has no basis to offer it.",
+        "Note the consequence: the user must switch apps, find the entry, copy, and switch back, the exact manoeuvre producing the trailing spaces in the support logs.",
+        "Submit and wait two minutes to learn whether the paste was correct."
+      ],
+      "impact": "The form makes the safe behaviour, a long random password from a manager, the hardest one to execute, and gives no confirmation at entry that it worked; verification is deferred two minutes into a failure path that names no cause. This is where F-LOCKOUT starts.",
+      "fix": "Add a reveal toggle at a 44pt target that renders whitespace visibly, declare the provider's domain for password-manager association, set platform autofill hints for username and current password, and validate format and whitespace on blur rather than after the two-minute wait.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-1"
+      ]
+    },
+    {
+      "id": "F-PLATFORM",
+      "title": "One flow specified for three platforms",
+      "statement": "A single flow is specified for iOS, Android, and web, and its failure output is an Android-shaped toast with no per-platform backgrounding or completion behaviour defined.",
+      "severity": "P2",
+      "basis": "unverified",
+      "location": "steps 1-5, all platforms",
+      "reproduction": [
+        "Read the flow specification and note it describes a single sequence for iOS, Android, and web.",
+        "Note the failure output is a toast, a Material pattern with no native iOS equivalent and no standard web equivalent.",
+        "Ask what each platform renders at step 4; the specification does not say, so all three are designed by whoever implements them.",
+        "Ask the same of the two-minute wait: a backgrounded attempt behaves differently under iOS suspension, Android background limits, and a browser tab that can be closed.",
+        "Ask what closes the loop on web, where no push notification is available."
+      ],
+      "impact": "Unspecified platform behaviour becomes three divergent implementations, so the same user gets different answers about the same account depending on where they ask. It also makes support harder in a way that lands on AC-2, because a ticket about a failed link cannot be reproduced without knowing which of three unwritten flows the user saw.",
+      "fix": "Specify failure, waiting, and completion states once per platform: an inline form-level error everywhere rather than a toast anywhere, native background and notification behaviour on iOS and Android, and a web path that survives a closed tab by making the connection record the source of truth. Confirm link state syncs across platforms for the same account.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-2",
+        "assumption-A5"
+      ]
+    },
+    {
+      "id": "F-COPY",
+      "title": "System-voice copy at every uncertain moment",
+      "statement": "The waiting, failure, and success strings name no actor, offer no action, and anchor neither time claim to a timestamp.",
+      "severity": "P3",
+      "basis": "derived",
+      "location": "steps 3, 4, 5",
+      "reproduction": [
+        "Read the three strings at the flow's three hardest moments: 'Connecting — this can take up to 2 minutes', 'Something went wrong', 'Data will appear within 48 hours'.",
+        "Note none names Lumen or the provider as the actor, so nothing is anyone's responsibility.",
+        "Note none offers an action; all three describe a state and stop.",
+        "Note both time claims are unanchored (up to 2 minutes from when, 48 hours from when) and neither is shown counting down.",
+        "Note 'up to 2 minutes' sets a ceiling users read as the expected duration, making every link feel like the worst case."
+      ],
+      "impact": "Small individually, and together they set the tone of the only three moments where the user is uncertain. Copy that names no actor and offers no action leaves the user to invent an explanation, and the one they invent is that the app is broken. Anchoring both time claims to a real timestamp is close to free and removes a recurring class of 'it's been three days' tickets that are actually about not knowing when the clock started.",
+      "fix": "Rewrite all three with an actor and an action: name the provider being contacted, say what failed and what to do about it, and anchor the 48 hours to the completion timestamp with the remaining window shown. Replace the ceiling framing on the wait with the F-BLIND-WAIT stage labels.",
+      "artifact": "report",
+      "status": "open",
+      "tags": [
+        "AC-2"
+      ]
+    }
+  ],
+  "assumptions": [
+    {
+      "id": "A1",
+      "statement": "The stored credential is recoverable by whoever holds the key, rather than protected by a one-way transform.",
+      "basis": "Inferred from the integration shape: a screen-scraping login must be replayed to the provider on every sync, so encryption here is reversible. Key custody was not inspected.",
+      "impact_if_wrong": "If a provider-side token is already in use for some providers, F-CRED-CAPTURE narrows to the providers that still require a password.",
+      "status": "open",
+      "artifact": "report"
+    },
+    {
+      "id": "A2",
+      "statement": "No MFA or one-time-code step exists anywhere in the flow.",
+      "basis": "Read from its absence in the five steps described; no build was available to check.",
+      "impact_if_wrong": "F-NO-MFA drops from P1 to a copy fix on the failure message.",
+      "status": "open",
+      "artifact": "report"
+    },
+    {
+      "id": "A3",
+      "statement": "The 41% wrong-credential-retry figure counts failure events, not distinct users.",
+      "basis": "Standard reporting shape for a failure-reason breakdown; the definition was not supplied.",
+      "impact_if_wrong": "If it counts distinct users, the number of people affected is larger than it reads and F-LOCKOUT is worse, not better.",
+      "status": "open",
+      "artifact": "report"
+    },
+    {
+      "id": "A4",
+      "statement": "The current link success rate is unknown, so whether AC-1 is met today cannot be stated.",
+      "basis": "It was not supplied. The 34% abandon and 41% retry figures establish that AC-1 is under pressure, not what the rate is.",
+      "impact_if_wrong": "None to the findings. No success rate is computed anywhere in the deliverable, deliberately.",
+      "status": "open",
+      "artifact": "report"
+    },
+    {
+      "id": "A5",
+      "statement": "The described flow is the Android build.",
+      "basis": "Inferred from the toast pattern at step 4.",
+      "impact_if_wrong": "F-PLATFORM still stands; the per-platform behaviour is undefined either way.",
+      "status": "open",
+      "artifact": "report"
+    },
+    {
+      "id": "A6",
+      "statement": "No connections or account screen shows link state outside this flow.",
+      "basis": "Read from its absence in the five steps described.",
+      "impact_if_wrong": "F-NO-STATUS becomes a question of whether that screen carries a state and a retry action rather than only a list.",
+      "status": "open",
+      "artifact": "report"
+    },
+    {
+      "id": "A7",
+      "statement": "The 40 listed providers cover most of the target market.",
+      "basis": "Coverage was not supplied.",
+      "impact_if_wrong": "F-NO-LONGTAIL rises in priority sharply, because the dead end becomes the common case rather than the edge.",
+      "status": "open",
+      "artifact": "report"
+    }
+  ],
+  "gates": [
+    {
+      "id": "design-qa-checkpoint",
+      "title": "Perspective checkpoint",
+      "kind": "checkpoint",
+      "description": "Three calls that belong to the user, not the run: the fix-before-ship severity threshold, whether residual UX risk is acceptable for this release, and approval of the stop-ship recommendation. The report is delivered as evidence; none of it becomes a release decision until these are answered. The stop-ship recommendation R-STOP-SHIP is held awaiting-decision and was not issued.",
+      "blocking": false,
+      "state": "open",
+      "questions": [
+        {
+          "id": "severity_threshold",
+          "label": "What severity threshold triggers immediate fix-before-ship?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "p0_only",
+          "description": "The report assumes P0 is the bar, because all four P0s either block a stated acceptance criterion or cause harm outside the app that the user cannot undo. A different bar changes the size of the fix list, not the findings.",
+          "options": [
+            {
+              "value": "p0_only",
+              "label": "P0 only — the four blocking findings (Recommended)",
+              "description": "F-LOCKOUT, F-CRED-CAPTURE, F-BLIND-WAIT, F-STATE-LOSS. Each maps to a stated criterion or to irreversible harm; the rest have workarounds."
+            },
+            {
+              "value": "p0_and_p1",
+              "label": "P0 and P1 — eight findings",
+              "description": "Adds MFA support, search, pending state, and status surface. Materially better odds on AC-1 and AC-2, and materially more scope."
+            },
+            {
+              "value": "ac_blocking_only",
+              "label": "Only findings that block a stated acceptance criterion",
+              "description": "A narrower bar that would drop F-CRED-CAPTURE to a follow-up, since AC-3 is unverified rather than failed."
+            }
+          ]
+        },
+        {
+          "id": "residual_risk",
+          "label": "Is the current residual UX risk acceptable for this release?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "not_acceptable",
+          "description": "Shipping as-is means some users will be locked out of their utility account by a password Lumen mangled, a third of users will abandon at a screen that cannot be cancelled, and every failure will be undiagnosable to both the user and support.",
+          "options": [
+            {
+              "value": "not_acceptable",
+              "label": "Not acceptable — the lockout path has to close first (Recommended)",
+              "description": "F-LOCKOUT is the one item where the damage lands on an account Lumen does not own and the user cannot repair in-product. R2 and R6 together close it and are small."
+            },
+            {
+              "value": "acceptable_with_mitigations",
+              "label": "Acceptable with mitigations — ship behind a limited rollout",
+              "description": "Defensible if the fixes are already scheduled: cap the cohort, instrument attempt counts and abandons, hold the wider release on the measured numbers."
+            },
+            {
+              "value": "acceptable_as_is",
+              "label": "Acceptable as-is",
+              "description": "The user's call to make, recorded as a decision rather than reached by default. It means accepting the 34% abandon against an 85% target."
+            }
+          ]
+        },
+        {
+          "id": "stop_ship_approval",
+          "label": "Approve this stop-ship or ship-with-known-risk call?",
+          "type": "radio",
+          "required": true,
+          "allow_custom": true,
+          "default": "approve_stop_ship",
+          "description": "The run's recommendation, held pending approval rather than issued: stop-ship on the four P0s. The determining one is F-LOCKOUT, the only finding whose consequence lands outside the product and cannot be reversed by anything Lumen ships afterwards.",
+          "options": [
+            {
+              "value": "approve_stop_ship",
+              "label": "Approve stop-ship on the four P0s (Recommended)",
+              "description": "Fix R2, R3, R4, R5, R6 before release; R1 and R9 land as the next milestone."
+            },
+            {
+              "value": "ship_with_known_risk",
+              "label": "Ship with known risk, recorded and time-boxed",
+              "description": "Requires naming an owner and a date for the P0 fixes, and telling support what is coming so the tickets are expected."
+            },
+            {
+              "value": "verify_assumptions_first",
+              "label": "Neither yet — verify A1, A2, and A6 first",
+              "description": "Three findings rest on absences inferred from the flow summary; confirming them changes what the stop-ship list contains."
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "decisions": [],
+  "recommendations": [
+    {
+      "id": "R-STOP-SHIP",
+      "text": "Stop-ship on the four P0 findings until F-LOCKOUT, F-BLIND-WAIT, and F-STATE-LOSS are fixed. Held awaiting the user's answer at the stop-ship gate; not issued as a decision by this run.",
+      "state": "awaiting-decision",
+      "artifact": "report",
+      "tags": [
+        "irreversible",
+        "gate:design-qa-checkpoint"
+      ]
+    },
+    {
+      "id": "R1",
+      "text": "Replace credential capture with provider-side authorization wherever per-provider coverage exists, so Lumen receives a revocable grant and never holds a password. Removes F-CRED-CAPTURE, F-LOCKOUT, F-NO-MFA, and F-WRONG-CRED-TYPE at once and settles AC-3. Coverage across the 40 providers must be verified first.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R2",
+      "text": "Trim leading and trailing whitespace at the input boundary and disclose the correction inline. Hours of work against a documented cause of the 41% retry figure.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R3",
+      "text": "Return failures to step 2 with provider and username intact rather than to step 1, removing the largest cost of every retry in the flow.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R4",
+      "text": "Give errors a named cause and a next action in at least four classes: credentials rejected, verification needed, provider unreachable, connection lost.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R5",
+      "text": "Make the two-minute wait cancellable, staged, and backgroundable with a completion notification. Aimed directly at the 34% abandon rate.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R6",
+      "text": "Cap consecutive login attempts before the provider's lockout threshold; at the second rejection stop offering a bare retry and route to the provider's own password reset.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R7",
+      "text": "Replace the 48-hour zeros with an explicit pending state carried by the data rather than by a dismissible banner. Never render a measurement that has not been taken.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R8",
+      "text": "Search on word boundaries with a per-provider alias list and typo tolerance, plus ZIP-based provider suggestion and an empty state that offers it.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    },
+    {
+      "id": "R9",
+      "text": "Ship a connections screen with state, retry, and an unlink that deletes the stored secret and confirms it, synced across iOS, Android, and web.",
+      "state": "awaiting-decision",
+      "artifact": "report"
+    }
+  ],
+  "contract": {
+    "declared_by": "run",
+    "items": [
+      {
+        "item": "Severity-ranked P0-P3 findings with stable ids",
+        "held": true,
+        "note": "13 findings: 4 P0, 4 P1, 4 P2, 1 P3. Ids match the deliverable."
+      },
+      {
+        "item": "Reproduction path per finding",
+        "held": true,
+        "note": "Written to be executable against a real build; no build was available, so none is a record of an observed session."
+      },
+      {
+        "item": "User impact statement per finding",
+        "held": true
+      },
+      {
+        "item": "Per-finding evidence basis (reported / derived / unverified)",
+        "held": true
+      },
+      {
+        "item": "Unknowns labelled as assumptions rather than asserted",
+        "held": true,
+        "note": "7 assumptions; A1, A2 and A6 each change a finding's severity if false."
+      },
+      {
+        "item": "No fabricated user data, metrics, or citations",
+        "held": true,
+        "note": "Only the three figures supplied in the brief are quoted. No success rate is computed or extrapolated."
+      },
+      {
+        "item": "Perspective checkpoint asked at severity, risk, and irreversible-recommendation gates",
+        "held": true,
+        "note": "Checkpoint gate rides with the delivered report; blocking false."
+      },
+      {
+        "item": "Irreversible recommendation withheld pending approval",
+        "held": true,
+        "note": "R-STOP-SHIP is awaiting-decision, not issued."
+      },
+      {
+        "item": "PMF and positioning analysis excluded per role boundary",
+        "held": true,
+        "note": "Recorded under limits as an escalation to /pmf-review if the credential decision proves to be a positioning question."
+      }
+    ]
+  },
+  "limits": [
+    "No running build, screens, code, or repository was inspected. Every finding derives from the written flow summary; reproduction steps are instructions to verify, not observations.",
+    "Credential handling could not be checked. Key custody, retention, transport, and deletion are outside what a flow summary shows, so AC-3 is marked unverified rather than failed or met.",
+    "No user data, ticket text, session recordings, or metrics beyond the three figures in the brief were available. The 41%, 34%, and trailing-space reports are quoted as supplied; nothing is extrapolated from them and no success rate is computed.",
+    "The current link success rate and current weekly ticket volume were not supplied, so the size of the gap to AC-1 and AC-2 is unknown.",
+    "Provider coverage and per-provider authorization support were not verified. R1 depends on how many of the 40 providers offer a provider-side authorization path.",
+    "Positioning and market-fit assessment are outside this skill's role boundary and were not performed; if the credential-capture decision is a positioning question rather than an implementation one, it escalates to /pmf-review.",
+    "The three checkpoint questions are unanswered at the time of writing, so every recommendation including R-STOP-SHIP is recorded as awaiting-decision."
+  ]
+}

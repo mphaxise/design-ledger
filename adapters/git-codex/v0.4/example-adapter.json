@@ -1,0 +1,89 @@
+{
+  "adapter": "design-ledger/git-codex",
+  "schema_version": "0.4",
+  "project": {
+    "id": "example-product"
+  },
+  "repository": {
+    "id": "example-ios-app"
+  },
+  "landing_gate": "pre-push",
+  "risk_rules": [
+    {
+      "id": "adapter-policy",
+      "paths": [".design-ledger/**"],
+      "risk": "high",
+      "invalidates": ["source-build", "ui-runtime", "auth-lifecycle", "naming-maps", "docs", "release"]
+    },
+    {
+      "id": "ui",
+      "paths": ["**/Views/**", "**/*View.swift", "**/Assets.xcassets/**"],
+      "risk": "high",
+      "invalidates": ["source-build", "ui-runtime"]
+    },
+    {
+      "id": "auth-lifecycle",
+      "paths": ["**/Auth/**", "**/AppDelegate.swift", "**/*App.swift"],
+      "risk": "critical",
+      "invalidates": ["source-build", "auth-lifecycle"]
+    },
+    {
+      "id": "naming-maps",
+      "paths": ["**/*Route*.swift", "**/*Map*.swift", "**/Localizable.xcstrings"],
+      "risk": "medium",
+      "invalidates": ["source-build", "naming-maps"]
+    },
+    {
+      "id": "docs",
+      "paths": ["**/*.md", "docs/**"],
+      "risk": "low",
+      "invalidates": ["docs"]
+    },
+    {
+      "id": "release",
+      "paths": ["**/*.xcodeproj/**", "**/*.entitlements", "**/Info.plist", "fastlane/**"],
+      "risk": "critical",
+      "invalidates": ["source-build", "release"]
+    }
+  ],
+  "default_rule": {
+    "risk": "medium",
+    "invalidates": ["source-build"]
+  },
+  "checks": [
+    {
+      "id": "source-tests",
+      "proof_class": "source-build",
+      "kind": "command",
+      "inputs": ["**/*.swift", "**/*.xcodeproj/**", "**/Package.resolved"],
+      "command": ["./scripts/test-source.sh"],
+      "timeout_seconds": 1200,
+      "failure_severity": "P1",
+      "required_at": ["pre-push", "pr-readiness", "testflight", "merge", "release"]
+    },
+    {
+      "id": "ui-review",
+      "proof_class": "ui-runtime",
+      "kind": "codex",
+      "inputs": ["**/Views/**", "**/*View.swift", "**/Assets.xcassets/**"],
+      "failure_severity": "P1",
+      "required_at": ["pr-readiness", "testflight", "merge", "release"]
+    },
+    {
+      "id": "auth-lifecycle-review",
+      "proof_class": "auth-lifecycle",
+      "kind": "codex",
+      "inputs": ["**/Auth/**", "**/AppDelegate.swift", "**/*App.swift"],
+      "failure_severity": "P0",
+      "required_at": ["pre-push", "pr-readiness", "testflight", "merge", "release"]
+    },
+    {
+      "id": "release-approval",
+      "proof_class": "release",
+      "kind": "human",
+      "inputs": ["**/*.xcodeproj/**", "**/*.entitlements", "**/Info.plist", "fastlane/**"],
+      "failure_severity": "P0",
+      "required_at": ["testflight", "merge", "release"]
+    }
+  ]
+}

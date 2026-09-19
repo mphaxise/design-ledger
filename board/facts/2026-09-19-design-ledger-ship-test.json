@@ -1,0 +1,28 @@
+{
+  "record": "design-ledger/session-test-record",
+  "schema_version": "0.1",
+  "id": "design-ledger-ship-2026-09-19-01",
+  "date": "2026-09-19",
+  "subject": "Design Ledger pre-landing verification",
+  "source": {
+    "kind": "local-test-run",
+    "command": "python3 -m unittest discover -s tests -v; validate schemas, plugin, skill, installed copy, and generated board",
+    "base_commit": "18567750988e9db6d0476a4821a8ffe47960883f"
+  },
+  "result": {
+    "status": "passed",
+    "tests_run": 14,
+    "failures": 0,
+    "errors": 0
+  },
+  "coverage": [
+    "all prior Git, evidence, experience, collaboration, plugin, and installation checks remain passing",
+    "the generated post-commit hook targets the stable runtime wrapper and passes shell syntax validation",
+    "all ten historical manifests validate and the Evidence Board generation smoke test succeeds",
+    "the Hey Minie onboarding checkpoint remains Ready under the installed modular runtime"
+  ],
+  "limits": [
+    "The Evidence Board smoke test verifies generation and data counts; it is not a screenshot-based visual regression test.",
+    "No push, pull request, merge, or Hey Minie repository mutation occurred during this run."
+  ]
+}
