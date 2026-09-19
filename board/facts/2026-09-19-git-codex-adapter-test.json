@@ -1,0 +1,34 @@
+{
+  "record": "design-ledger/session-test-record",
+  "schema_version": "0.1",
+  "id": "git-codex-adapter-2026-09-19-01",
+  "date": "2026-09-19",
+  "subject": "Git/Codex development adapter v0.4",
+  "source": {
+    "kind": "local-test-run",
+    "command": "python3 -m unittest discover -s tests -v",
+    "base_commit": "56632ae783799a7dbc5b3031d55b52f010f67246"
+  },
+  "result": {
+    "status": "passed",
+    "tests_run": 9,
+    "failures": 0,
+    "errors": 0
+  },
+  "coverage": [
+    "concurrent commit-event ingestion preserves every event",
+    "rapid linear commits coalesce into one source-bound receipt",
+    "unchanged declared inputs reuse accepted results",
+    "unchanged queued proof is not queued again and late accepted evidence satisfies the same input digest",
+    "human evidence requires explicit human authority",
+    "a critical failed check blocks its required delivery checkpoint",
+    "multiple agents can satisfy quorum and conflicts require explicit supersession",
+    "runtime state inside the product repository is refused",
+    "v0.4 schemas and example adapter load"
+  ],
+  "limits": [
+    "The run used temporary fixture repositories, not a production product repository.",
+    "No Hey Minie source, hook, checkpoint, build, device, TestFlight, merge, release, or remote state was changed.",
+    "Codex check execution is queued and attributed through the receipt contract; automatic Codex task dispatch is outside this increment."
+  ]
+}

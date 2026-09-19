@@ -42,13 +42,15 @@ Python 3 standard library only. The daemon flag defaults to `http://127.0.0.1:74
 
 The layer runs outside the substrate, on the seam OpenDesign documents for external orchestrators: the daemon HTTP API drives runs, and workspace provenance keeps source authority outside the design tool. Practice contracts travel as SKILL.md files the substrate composes into its agent prompts. The board projects what runs leave behind into objects. Nothing here forks or patches a substrate.
 
+The current v0.4 development path uses Git commits and local Codex/check consumers directly. It has no OpenDesign runtime dependency. A non-blocking post-commit hook appends an immutable event; a separate worker coalesces commit chains, invalidates only affected proof classes, reuses content-addressed evidence, and emits append-only receipts (`docs/git-codex-adapter.md`). The OpenDesign integration remains the earlier reference adapter and evidence history.
+
 ## The base-UI hypothesis
 
 Chat is an input method. The home surface for design practice is the ledger: a project view where findings, assumptions, gates, and decisions carry identity, status, and history, where runs create the objects and humans answer them. The board is the first test of that hypothesis; `docs/concept.md` carries the full argument.
 
 ## Status
 
-v0.1, shipped 2026-09-01. Real: the board, the four workflow ports, the substrate evidence above, the run-manifest schema with six backfilled genesis manifests, a board that renders from manifests, and live emission proven across all four workflow ports on 2026-09-01 — every run emitted a schema-valid manifest on its first attempt, and the research-brief run held at its gate and emitted a gated manifest with no deliverable (the four emitted manifests are in `schema/examples/`). Planned: a write path from board to substrate, the graduation loop, more substrates. `ROADMAP.md` carries the sequence and is explicit about which is which.
+v0.1 shipped 2026-09-01 with the OpenDesign reference integration. v0.4 is implemented and locally fixture-tested as a Git/Codex adapter on 2026-09-19; product-repository integration remains pending. The adapter contract, runtime, schemas, tests, and integration handoff are in this repository. `ROADMAP.md` separates shipped, implemented, and pending work.
 
 ## License
 

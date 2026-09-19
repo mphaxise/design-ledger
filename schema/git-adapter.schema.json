@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/mphaxise/design-ledger/main/schema/git-adapter.schema.json",
+  "title": "design-ledger Git/Codex adapter v0.4",
+  "type": "object",
+  "required": ["adapter", "schema_version", "repository", "risk_rules", "checks"],
+  "properties": {
+    "adapter": { "const": "design-ledger/git-codex" },
+    "schema_version": { "const": "0.4" },
+    "repository": {
+      "type": "object",
+      "required": ["id"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" }
+      }
+    },
+    "landing_gate": { "enum": ["pre-push", "pr-readiness", "testflight", "merge", "release"] },
+    "risk_rules": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "paths", "risk", "invalidates"],
+        "properties": {
+          "id": { "type": "string" },
+          "paths": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "risk": { "enum": ["low", "medium", "high", "critical"] },
+          "invalidates": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+        }
+      }
+    },
+    "default_rule": {
+      "type": "object",
+      "required": ["risk", "invalidates"],
+      "properties": {
+        "risk": { "enum": ["low", "medium", "high", "critical"] },
+        "invalidates": { "type": "array", "items": { "type": "string" }, "minItems": 1 }
+      }
+    },
+    "checks": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "proof_class", "kind", "inputs", "required_at"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$" },
+          "proof_class": { "type": "string" },
+          "kind": { "enum": ["command", "codex", "human"] },
+          "inputs": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "command": { "type": "array", "items": { "type": "string" }, "minItems": 1 },
+          "timeout_seconds": { "type": "integer", "minimum": 1 },
+          "failure_severity": { "enum": ["P0", "P1", "P2", "P3"] },
+          "acceptance": {
+            "type": "object",
+            "required": ["minimum", "authorities"],
+            "properties": {
+              "minimum": { "type": "integer", "minimum": 1 },
+              "authorities": {
+                "type": "array",
+                "items": { "enum": ["automatic", "agent", "human"] },
+                "minItems": 1
+              },
+              "distinct_actors": { "type": "boolean" }
+            }
+          },
+          "required_at": {
+            "type": "array",
+            "items": { "enum": ["pre-push", "pr-readiness", "testflight", "merge", "release"] }
+          }
+        }
+      }
+    }
+  }
+}
