@@ -1,0 +1,29 @@
+{
+  "record": "design-ledger/session-test-record",
+  "schema_version": "0.1",
+  "id": "design-ledger-cleanup-2026-09-19-01",
+  "date": "2026-09-19",
+  "subject": "Design Ledger behavior-preserving runtime cleanup",
+  "source": {
+    "kind": "local-test-run",
+    "command": "python3 -m unittest discover -s tests -v; py_compile runtime and plugin; validate skill and plugin",
+    "base_commit": "6a5c9ee177c8f09d4fcdaf472c0bd85584d7cbcb"
+  },
+  "result": {
+    "status": "passed",
+    "tests_run": 13,
+    "failures": 0,
+    "errors": 0
+  },
+  "coverage": [
+    "all prior Git, evidence, experience, collaboration, and plugin checks remain passing",
+    "the modular runtime preserves the stable CLI and import surface",
+    "the install synchronizer produces a self-contained runtime and plugin copy",
+    "the Hey Minie onboarding checkpoint is replayed separately against its frozen baseline"
+  ],
+  "limits": [
+    "Legacy OpenDesign code and historical evidence were retained.",
+    "The cleanup changes internal organization and installation mechanics only.",
+    "No Hey Minie source or adapter file was changed."
+  ]
+}

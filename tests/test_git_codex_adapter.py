@@ -130,6 +130,34 @@ class GitCodexAdapterTests(unittest.TestCase):
         self.assertEqual(1, len(adapter.json_records(paths["events"], adapter.RECORD_EVENT)))
         self.assertEqual(1, len(adapter.json_records(paths["receipts"], adapter.RECORD_RECEIPT)))
 
+    def test_install_sync_produces_self_contained_runtime_and_plugin(self):
+        root = pathlib.Path(self.tmp.name) / "install"
+        runtime_home = root / "runtime"
+        plugin_home = root / "plugin"
+        result = subprocess.run(
+            [
+                sys.executable,
+                str(ROOT / "scripts" / "sync_codex_install.py"),
+                "sync",
+                "--runtime-home",
+                str(runtime_home),
+                "--plugin-home",
+                str(plugin_home),
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, result.returncode, result.stderr)
+        help_result = subprocess.run(
+            [sys.executable, str(runtime_home / "git_codex_adapter.py"), "--help"],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+        self.assertEqual(0, help_result.returncode, help_result.stderr)
+        self.assertTrue((plugin_home / "hooks" / "hooks.json").is_file())
+
     def test_unchanged_inputs_reuse_accepted_result(self):
         self.ingest()
         baseline = adapter.process(self.repo, self.contract, self.state)[0][1]

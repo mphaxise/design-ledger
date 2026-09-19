@@ -35,4 +35,10 @@ Plugin installation does not grant permission to push, open pull requests, merge
 
 ## Update behavior
 
-Local plugin updates use a new cachebuster and reinstall from the personal marketplace. A new Codex task is required to load the updated skill and hook. Existing events and receipts remain in the stable Design Ledger state directory.
+Existing local installations synchronize and verify the modular runtime and plugin source with one command:
+
+```sh
+python3 scripts/sync_codex_install.py sync --install
+```
+
+The plugin manifest carries the release version used as the Codex cache key. A new Codex task loads an updated skill and hook. Existing events and receipts remain in the stable Design Ledger state directory.
